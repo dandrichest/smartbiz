@@ -4,12 +4,21 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "dev": "node --watch server.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js"
   },
   "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.0",
     "mongoose": "^9.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
