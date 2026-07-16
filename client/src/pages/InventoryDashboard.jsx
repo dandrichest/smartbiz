@@ -1,11 +1,16 @@
 import '../styles/InventoryDashboard.css';
-
+import { useState } from 'react';
 import DashboardCard from '../components/DashboardCard';
 import InventoryChart from '../components/InventoryChart';
 import RecentProducts from '../components/RecentProducts';
 import LowStockProducts from '../components/LowStockProducts';
+import ProductSearch from '../components/ProductSearch';
 
 function InventoryDashboard() {
+
+    const [search, setSearch] = useState("");
+    const [category, setCategory] = useState("All");
+    const [sort, setSort] = useState("");
     return (
         <div className="dashboard">
             <h1>Inventory Dashboard</h1>
@@ -28,6 +33,14 @@ function InventoryDashboard() {
                     title="Out of Stock"
                     value="10" />
             </div>
+
+            <ProductSearch
+                search={search}
+                setSearch={setSearch}
+                category={category}
+                setCategory={setCategory}
+                sort={sort}
+                setSort={setSort} />
 
             <div className="charts">
                 <InventoryChart />
