@@ -1,12 +1,11 @@
-import LoginForm from "./components/LoginForm"
+import CustomerManagement from "./components/CustomerManagement";
 
 function App() {
-
   return (
     <>
-    <LoginForm />
+      <CustomerManagement />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
