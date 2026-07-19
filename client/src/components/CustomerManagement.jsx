@@ -11,7 +11,7 @@ const emptyCustomer = {
   address: '',
 };
 
-const CustomerManagement = () => {
+const CustomerManagement = ({ onLogout }) => {
   const [customers, setCustomers] = useState([]);
   const [form, setForm] = useState(emptyCustomer);
   const [editingId, setEditingId] = useState(null);
@@ -109,7 +109,14 @@ const CustomerManagement = () => {
   return (
     <div className="customer-management">
       <section className="customer-panel">
-        <h1>Customer Management</h1>
+        <div className="customer-header">
+          <h1>Customer Management</h1>
+          {onLogout && (
+            <button type="button" className="secondary logout" onClick={onLogout}>
+              Logout
+            </button>
+          )}
+        </div>
 
         <form className="customer-form" onSubmit={submitCustomer}>
           <div className="form-row">

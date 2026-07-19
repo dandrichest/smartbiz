@@ -2,19 +2,14 @@ import { useState } from "react";
 import { FaUser, FaLock } from "react-icons/fa";
 import "../styles/LoginForm.css";
 
-const LoginForm = () => {
+const LoginForm = ({ onLogin }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleSubmit = (event) => {
         event.preventDefault();
 
-        console.log({
-            email,
-            password,
-        });
-
-        alert(`Sending data:\nEmail: ${email}`);
+        onLogin({ email });
     };
 
     return (
