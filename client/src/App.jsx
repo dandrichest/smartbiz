@@ -1,12 +1,17 @@
-import LoginForm from "./components/LoginForm"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginForm from "./components/LoginForm";
+import SignUpForm from "./components/SignUpForm";
 
 function App() {
-
   return (
-    <>
-    <LoginForm />
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginForm />} />
+        <Route path="/login" element={< LoginForm />} />
+        <Route path="/signup" element={< SignUpForm />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
