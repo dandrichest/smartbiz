@@ -1,25 +1,42 @@
 import { useState } from "react";
 import { FaUser, FaLock } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import "../styles/LoginForm.css";
-<<<<<<< HEAD
 
-const LoginForm = ({ onLogin }) => {
-=======
-import { Link } from "react-router-dom";
 const LoginForm = () => {
->>>>>>> main
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        onLogin({ email });
+        setLoading(true);
+        setError("");
+
+        try {
+            const result = await login(email, password);
+            if (result.success) {
+                navigate("/dashboard");
+            } else {
+                setError(result.error || "Login failed");
+            }
+        } catch (err) {
+            setError("An error occurred during login");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="container">
             <form onSubmit={handleSubmit}>
                 <h1>Access your account</h1>
+
+                {error && <div className="error-message">{error}</div>}
 
                 <div className="input-box">
                     <label htmlFor="email">Email</label>
@@ -30,6 +47,7 @@ const LoginForm = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        disabled={loading}
                     />
                     <FaUser className="icon" />
                 </div>
@@ -43,6 +61,7 @@ const LoginForm = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={loading}
                     />
                     <FaLock className="icon" />
                 </div>
@@ -52,15 +71,16 @@ const LoginForm = () => {
                         <input type="checkbox" />
                         Remember me
                     </label>
-
                     <a href="#">Forgot password?</a>
                 </div>
 
-                <button type="submit">Login</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
+                </button>
 
                 <div className="signup-link">
                     <p>
-                        Don't have an account? <Link to="/signup">Sign Up</Link>
+                        Don't have an account? <Link to="/register">Sign Up</Link>
                     </p>
                 </div>
             </form>
