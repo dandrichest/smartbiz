@@ -1,0 +1,122 @@
+.customer-management {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.customer-panel,
+.customer-list {
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.customer-panel h1,
+.customer-list h2 {
+  margin-bottom: 1rem;
+}
+
+.customer-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #1d4ed8;
+  color: white;
+}
+
+button.secondary {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+button.danger {
+  background: #dc2626;
+}
+
+.message {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+}
+
+.success {
+  background: #d1fae5;
+  color: #064e3b;
+}
+
+.error {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  text-align: left;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+tbody td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody button {
+  margin-right: 0.5rem;
+}

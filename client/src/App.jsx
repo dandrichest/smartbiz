@@ -9,7 +9,7 @@ import SignUpForm from "./components/SignUpForm";
 import Dashboard from "./components/dashboard/Dashboard";
 import InventoryDashboard from "./components/inventory/InventoryDashboard";
 import ProductSearch from "./components/products/ProductSearch";
-import CustomerManagement from "./components/customers/CustomerManagement";
+import CustomerManagement from "./components/CustomerManagement";
 import AnalyticsDashboard from "./components/analytics/AnalyticsDashboard";
 import SalesProcessing from "./components/sales/SalesProcessing";
 import SalesHistory from "./components/sales/SalesHistory";
