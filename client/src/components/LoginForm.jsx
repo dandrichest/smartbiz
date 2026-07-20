@@ -24,6 +24,7 @@ const LoginForm = () => {
             } else {
                 setError(result.error || "Login failed");
             }
+        // eslint-disable-next-line no-unused-vars
         } catch (err) {
             setError("An error occurred during login");
         } finally {
