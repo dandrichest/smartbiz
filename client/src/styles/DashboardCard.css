@@ -1,17 +1,322 @@
-.card {
-    background: white;
+/* ==========================================
+   DASHBOARD CARD - DARK NAVY THEME
+========================================== */
+
+.dashboard-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.25s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.dashboard-card:hover::before {
+    opacity: 1;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+/* ===== COLOR VARIATIONS ===== */
+.dashboard-card.blue::before {
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
+}
+
+.dashboard-card.green::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.dashboard-card.purple::before {
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+.dashboard-card.yellow::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.dashboard-card.red::before {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.dashboard-card.indigo::before {
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.dashboard-card.pink::before {
+    background: linear-gradient(90deg, #ec4899, #f472b6);
+}
+
+/* ===== CONTENT ===== */
+.dashboard-card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.dashboard-card-left {
+    flex: 1;
+}
+
+.dashboard-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.dashboard-card-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.dashboard-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+}
+
+.dashboard-card-growth {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.dashboard-card-growth.up {
+    color: #059669;
+    background: #d1fae5;
+}
+
+.dashboard-card-growth.down {
+    color: #dc2626;
+    background: #fee2e2;
+}
+
+.dashboard-card-growth.neutral {
+    color: #d97706;
+    background: #fffbeb;
+}
+
+.dashboard-card-growth svg {
+    font-size: 10px;
+}
+
+.dashboard-card-subtitle {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* ===== ICON ===== */
+.dashboard-card-icon-wrapper {
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #eef2ff;
+    color: #4f46e5;
+    transition: transform 0.3s ease;
 }
 
-.card h3 {
-    color: #666;
-    font-size: 18px;
+.dashboard-card:hover .dashboard-card-icon-wrapper {
+    transform: scale(1.05) rotate(-5deg);
 }
 
-.card p {
-    font-size: 36px;
-    font-weight: bold;
-    margin-top: 15px;
+/* Color-specific icon backgrounds */
+.dashboard-card.blue .dashboard-card-icon-wrapper {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.dashboard-card.green .dashboard-card-icon-wrapper {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.dashboard-card.purple .dashboard-card-icon-wrapper {
+    background: #f5f3ff;
+    color: #8b5cf6;
+}
+
+.dashboard-card.yellow .dashboard-card-icon-wrapper {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.dashboard-card.red .dashboard-card-icon-wrapper {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.dashboard-card.indigo .dashboard-card-icon-wrapper {
+    background: #eef2ff;
+    color: #6366f1;
+}
+
+.dashboard-card.pink .dashboard-card-icon-wrapper {
+    background: #fdf2f8;
+    color: #ec4899;
+}
+
+.dashboard-card-icon {
+    font-size: 20px;
+}
+
+/* ===== PROGRESS BAR ===== */
+.dashboard-card-progress {
+    width: 100%;
+    height: 3px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    margin-top: 12px;
+    overflow: hidden;
+}
+
+.dashboard-card-progress-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Color-specific progress bars */
+.dashboard-card.blue .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
+}
+
+.dashboard-card.green .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.dashboard-card.purple .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+.dashboard-card.yellow .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.dashboard-card.red .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.dashboard-card.indigo .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.dashboard-card.pink .dashboard-card-progress-bar {
+    background: linear-gradient(90deg, #ec4899, #f472b6);
+}
+
+/* ===== LOADING STATE ===== */
+.dashboard-card.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.dashboard-card.loading .skeleton-title {
+    width: 80px;
+    height: 16px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.dashboard-card.loading .skeleton-value {
+    width: 120px;
+    height: 32px;
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.dashboard-card.loading .skeleton-icon {
+    width: 48px;
+    height: 48px;
+    background: #f1f5f9;
+    border-radius: 12px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .dashboard-card {
+        padding: 16px 20px;
+    }
+    
+    .dashboard-card-value {
+        font-size: 22px;
+    }
+    
+    .dashboard-card-icon-wrapper {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .dashboard-card-icon {
+        font-size: 16px;
+    }
+    
+    .dashboard-card-title {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-card {
+        padding: 14px 16px;
+    }
+    
+    .dashboard-card-value {
+        font-size: 20px;
+    }
+    
+    .dashboard-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    .dashboard-card-icon-wrapper {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .dashboard-card-icon {
+        font-size: 14px;
+    }
 }

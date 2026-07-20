@@ -13,52 +13,60 @@ import CustomerManagement from "./components/CustomerManagement";
 import AnalyticsDashboard from "./components/analytics/AnalyticsDashboard";
 import SalesProcessing from "./components/sales/SalesProcessing";
 import SalesHistory from "./components/sales/SalesHistory";
+import Settings from "./components/settings/Settings";
+import Privacy from "./components/Privacy";
+import Terms from './components/Terms';
+import Support from "./components/Support";
+import Docs from "./components/Docs";
 
 function App() {
   return (
     <AuthProvider>
       <AppProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-gray-50">
-            <Toaster 
-              position="top-right"
-              toastOptions={{
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+              success: {
                 duration: 3000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
+                iconTheme: {
+                  primary: '#4ade80',
+                  secondary: '#fff',
                 },
-                success: {
-                  duration: 3000,
-                  iconTheme: {
-                    primary: '#4ade80',
-                    secondary: '#fff',
-                  },
+              },
+              error: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
                 },
-                error: {
-                  duration: 4000,
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
-                  },
-                },
-              }}
-            />
-            <Routes>
-              <Route path="/login" element={<LoginForm />} />
-              <Route path="/register" element={<SignUpForm />} />
-              <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="inventory" element={<InventoryDashboard />} />
-                <Route path="products" element={<ProductSearch />} />
-                <Route path="customers" element={<CustomerManagement />} />
-                <Route path="analytics" element={<AnalyticsDashboard />} />
-                <Route path="sales" element={<SalesProcessing />} />
-                <Route path="sales-history" element={<SalesHistory />} />
-              </Route>
-            </Routes>
-          </div>
+              },
+            }}
+          />
+          <Routes>
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/register" element={<SignUpForm />} />
+            <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+             <Route path="/privacy" element={<Privacy />} />
+             <Route path="/terms" element={<Terms />} />
+              <Route path="/support" element={<Support />} />
+               <Route path="/docs" element={<Docs />} />
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="inventory" element={<InventoryDashboard />} />
+              <Route path="products" element={<ProductSearch />} />
+              <Route path="customers" element={<CustomerManagement />} />
+              <Route path="analytics" element={<AnalyticsDashboard />} />
+              <Route path="sales" element={<SalesProcessing />} />
+              <Route path="sales-history" element={<SalesHistory />} />
+              <Route path="settings" element={<Settings />} /> {/* Add this route */}
+            </Route>
+          </Routes>
         </BrowserRouter>
       </AppProvider>
     </AuthProvider>

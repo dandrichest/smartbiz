@@ -1,20 +1,26 @@
-const Sale = require('../models/Sale');
-const Product = require('../models/Product');
-const Customer = require('../models/Customer');
+import Sale from '../models/Sale.js';
+import Product from '../models/Product.js';
+import Customer from '../models/Customer.js';
 
 // Create a new sale
-exports.createSale = async (req, res) => {
+export const createSale = async (req, res) => {
     try {
         const { items, customerId, paymentMethod, total } = req.body;
 
-        // Validate items and update stock
+        // Validate items and check stock
         for (const item of items) {
             const product = await Product.findById(item.productId);
             if (!product) {
-                return res.status(404).json({ message: `Product ${item.productId} not found` });
+                return res.status(404).json({ 
+                    success: false,
+                    message: `Product ${item.productId} not found` 
+                });
             }
             if (product.stockQuantity < item.quantity) {
-                return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+                return res.status(400).json({ 
+                    success: false,
+                    message: `Insufficient stock for ${product.name}. Available: ${product.stockQuantity}` 
+                });
             }
         }
 
@@ -48,10 +54,15 @@ exports.createSale = async (req, res) => {
             });
         }
 
+        // Populate the sale with product and customer details
+        const populatedSale = await Sale.findById(sale._id)
+            .populate('customer', 'name email phone')
+            .populate('items.product', 'name price sku');
+
         res.status(201).json({
             success: true,
             message: 'Sale created successfully',
-            data: sale
+            data: populatedSale
         });
     } catch (error) {
         console.error('Error creating sale:', error);
@@ -64,7 +75,7 @@ exports.createSale = async (req, res) => {
 };
 
 // Get all sales with filters
-exports.getSales = async (req, res) => {
+export const getSales = async (req, res) => {
     try {
         const { startDate, endDate, paymentMethod, customerId } = req.query;
         const filter = {};
@@ -98,7 +109,7 @@ exports.getSales = async (req, res) => {
 };
 
 // Get single sale by ID
-exports.getSaleById = async (req, res) => {
+export const getSaleById = async (req, res) => {
     try {
         const sale = await Sale.findById(req.params.id)
             .populate('customer', 'name email phone')
@@ -126,10 +137,10 @@ exports.getSaleById = async (req, res) => {
 };
 
 // Generate receipt for a sale
-exports.generateReceipt = async (req, res) => {
+export const generateReceipt = async (req, res) => {
     try {
         const sale = await Sale.findById(req.params.id)
-            .populate('customer', 'name email phone')
+            .populate('customer', 'name email phone address')
             .populate('items.product', 'name price sku');
 
         if (!sale) {
@@ -151,7 +162,8 @@ exports.generateReceipt = async (req, res) => {
                 total: item.quantity * item.price
             })),
             total: sale.total,
-            paymentMethod: sale.paymentMethod
+            paymentMethod: sale.paymentMethod,
+            status: sale.status
         };
 
         res.json({
@@ -169,7 +181,7 @@ exports.generateReceipt = async (req, res) => {
 };
 
 // Export sales to CSV
-exports.exportSales = async (req, res) => {
+export const exportSales = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
         const filter = {};

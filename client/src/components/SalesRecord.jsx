@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react';
-import '../styles/SalesRecord.css';
+import '../../styles/SalesRecord.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -70,8 +71,12 @@ const SalesRecord = ({ onLogout }) => {
       const result = await res.json();
       setMessage(result.message || 'Sale recorded successfully');
       setForm({ customerId: '', productId: '', quantitySold: 1, paymentMethod: 'cash' });
+      
+      // Auto clear message after 3 seconds
+      setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError(err.message);
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -79,9 +84,11 @@ const SalesRecord = ({ onLogout }) => {
     <div className="sales-record">
       <div className="sales-header">
         <h1>Record Sale</h1>
-        <button type="button" className="secondary logout" onClick={onLogout}>
-          Logout
-        </button>
+        {onLogout && (
+          <button type="button" className="logout" onClick={onLogout}>
+            Logout
+          </button>
+        )}
       </div>
 
       <form className="sales-form" onSubmit={handleSubmit}>
@@ -103,7 +110,7 @@ const SalesRecord = ({ onLogout }) => {
             <option value="">Select product</option>
             {products.map((product) => (
               <option key={product._id} value={product._id}>
-                {product.name} — {product.quantity} in stock
+                {product.name} — {product.quantity || product.stockQuantity || 0} in stock
               </option>
             ))}
           </select>
@@ -134,8 +141,8 @@ const SalesRecord = ({ onLogout }) => {
         </label>
 
         <button type="submit">Record Sale</button>
-        {message && <p className="message success">{message}</p>}
-        {error && <p className="message error">{error}</p>}
+        {message && <div className="message success">{message}</div>}
+        {error && <div className="message error">{error}</div>}
       </form>
     </div>
   );

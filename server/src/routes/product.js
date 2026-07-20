@@ -1,7 +1,23 @@
-import { deleteProduct } from "../controllers/productController.js";
 import express from 'express';
+import { 
+    getProducts, 
+    getProductById, 
+    createProduct, 
+    updateProduct, 
+    deleteProduct 
+} from '../controllers/productController.js';
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
 
-router.delete("/:id", deleteProduct )
+// All routes require authentication
+router.use(auth);
 
-export default router
+// Product routes
+router.get('/', getProducts);
+router.get('/:id', getProductById);
+router.post('/', createProduct);
+router.put('/:id', updateProduct);
+router.delete('/:id', deleteProduct);
+
+export default router;
