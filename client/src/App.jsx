@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from "react";
 import LoginForm from "./components/LoginForm";
 import SalesRecord from "./components/SalesRecord";
@@ -25,3 +26,22 @@ function App() {
 }
 
 export default App;
+=======
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LoginForm from "./components/LoginForm";
+import SignUpForm from "./components/SignUpForm";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LoginForm />} />
+        <Route path="/login" element={< LoginForm />} />
+        <Route path="/signup" element={< SignUpForm />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+>>>>>>> main

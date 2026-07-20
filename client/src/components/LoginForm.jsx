@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { FaUser, FaLock } from "react-icons/fa";
 import "../styles/LoginForm.css";
+<<<<<<< HEAD
 
 const LoginForm = ({ onLogin }) => {
+=======
+import { Link } from "react-router-dom";
+const LoginForm = () => {
+>>>>>>> main
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -55,7 +60,7 @@ const LoginForm = ({ onLogin }) => {
 
                 <div className="signup-link">
                     <p>
-                        Don't have an account? <a href="#">Sign up</a>
+                        Don't have an account? <Link to="/signup">Sign Up</Link>
                     </p>
                 </div>
             </form>
