@@ -1,21 +1,24 @@
-import express from 'express';
-import { body } from 'express-validator';
-import { getSales, recordSale } from '../controllers/saleController.js';
-import authenticate from '../middleware/auth.js';
-
+const express = require('express');
 const router = express.Router();
+const saleController = require('../controllers/saleController');
+const auth = require('../middleware/auth');
 
-router.get('/', authenticate, getSales);
-router.post(
-  '/',
-  authenticate,
-  [
-    body('customerId').notEmpty().withMessage('Customer ID is required'),
-    body('productId').notEmpty().withMessage('Product ID is required'),
-    body('quantitySold').isInt({ min: 1 }).withMessage('Quantity sold must be at least 1'),
-    body('paymentMethod').optional().isString(),
-  ],
-  recordSale,
-);
+// All routes require authentication
+router.use(auth);
 
-export default router;
+// Create a new sale
+router.post('/', saleController.createSale);
+
+// Get all sales (with filters)
+router.get('/', saleController.getSales);
+
+// Get single sale by ID
+router.get('/:id', saleController.getSaleById);
+
+// Generate receipt for a sale
+router.get('/:id/receipt', saleController.generateReceipt);
+
+// Export sales
+router.get('/export/csv', saleController.exportSales);
+
+module.exports = router;
