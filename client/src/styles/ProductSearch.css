@@ -1,22 +1,189 @@
+/* ==========================================
+   PRODUCT SEARCH - DARK NAVY THEME
+========================================== */
+
 .product-search {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-bottom: 20px;
+}
+
+.product-search-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.product-search-input-wrapper {
+    flex: 1;
+    position: relative;
+    min-width: 200px;
+}
+
+.product-search-input-wrapper .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.product-search-input {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+
+.product-search-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.product-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.product-search-filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.product-search-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.product-search-filter-group .filter-icon {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.product-search-select {
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    min-width: 140px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.product-search-select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.product-search-select:hover {
+    border-color: #cbd5e1;
+}
+
+.product-search-results {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    margin: 30px 0;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-.product-search input {
-    flex: 1;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 16px;
+.product-search-results .results-count {
+    color: #64748b;
+    font-size: 14px;
 }
 
-.product-search select {
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+.product-search-results .results-count strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.product-search-clear {
+    color: #94a3b8;
+    font-size: 13px;
     cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+.product-search-clear:hover {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .product-search {
+        padding: 16px;
+    }
+    
+    .product-search-row {
+        flex-direction: column;
+    }
+    
+    .product-search-input-wrapper {
+        min-width: 100%;
+    }
+    
+    .product-search-filters {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .product-search-filter-group {
+        width: 100%;
+    }
+    
+    .product-search-filter-group .filter-icon {
+        min-width: 16px;
+    }
+    
+    .product-search-select {
+        flex: 1;
+        min-width: 100%;
+    }
+    
+    .product-search-results {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-search {
+        padding: 12px;
+    }
+    
+    .product-search-input {
+        font-size: 13px;
+        padding: 10px 14px 10px 38px;
+    }
+    
+    .product-search-select {
+        font-size: 13px;
+        padding: 10px 14px;
+    }
 }

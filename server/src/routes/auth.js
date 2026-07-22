@@ -1,20 +1,16 @@
 import express from 'express';
-import { body } from 'express-validator';
-import { register, login, refresh, logout } from '../controllers/authController.js';
+import { register, login, getCurrentUser, logout, updateProfile } from '../controllers/authController.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/register', [
-  body('email').isEmail().withMessage('Valid email required'),
-  body('password').isLength({ min: 6 }).withMessage('Password min 6 chars')
-], register);
-
-router.post('/login', [
-  body('email').isEmail().withMessage('Valid email required'),
-  body('password').exists().withMessage('Password required')
-], login);
-
-router.post('/refresh', refresh);
+// Public routes
+router.post('/register', register);
+router.post('/login', login);
 router.post('/logout', logout);
+
+// Protected routes (require authentication)
+router.get('/me', auth, getCurrentUser);
+router.put('/profile', auth, updateProfile);
 
 export default router;

@@ -43,18 +43,72 @@ const editProduct = async(req, res) => {
     }
 }
 
-//Delete product functionality
-const deleteProduct = async(req, res) => {
-    const { id } = req.params;
+// Get all products
+export const getProducts = async (req, res) => {
     try {
-        const product = await Product.findByIdAndDelete(id);
-        if(!product){
-            return res.status(404).json({message: 'Product not found'});
-        }
-        res.status(200).json({message: 'Product deleted successfully', product});
-    }catch(error){
-        res.status(500).json({message: error.message});
+        const products = await Product.find();
+        res.json({
+            success: true,
+            data: products
+        });
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch products',
+            error: error.message
+        });
     }
-}
+};
+
+// Get single product
+export const getProductById = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+        res.json({
+            success: true,
+            data: product
+        });
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch product',
+            error: error.message
+        });
+    }
+};
+
+
+
+// Delete product
+export const deleteProduct = async (req, res) => {
+    try {
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+        res.json({
+            success: true,
+            message: 'Product deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete product',
+            error: error.message
+        });
+    }
+};
 
 export { deleteProduct, addProduct, editProduct};

@@ -1,110 +1,192 @@
-import bcrypt from 'bcrypt';
+﻿import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
-import { validationResult } from 'express-validator';
-import User from '../models/User.js';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
 
-const signAccessToken = (user) => {
-  return jwt.sign({ id: user._id, email: user.email, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '15m' });
-};
-
-const signRefreshToken = (user) => {
-  return jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' });
-};
+dotenv.config();
 
 export const register = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    try {
+        const { name, email, password, role } = req.body;
 
-  const { name, email, password } = req.body;
-  try {
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ message: 'Email already in use' });
+        console.log('Registration attempt:', { name, email });
 
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(password, salt);
+        // Check if user exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'User already exists with this email'
+            });
+        }
 
-    const user = await User.create({ name, email, password: hash });
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-    const accessToken = signAccessToken(user);
-    const refreshToken = signRefreshToken(user);
+        // Create user
+        const user = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: role || 'staff'
+        });
 
-    user.refreshTokens.push(refreshToken);
-    await user.save();
+        await user.save();
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', path: '/api/auth/refresh' });
-    return res.status(201).json({ accessToken, user: { id: user._id, email: user.email, name: user.name } });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
-  }
+        console.log('User created successfully:', user.email);
+
+        // Generate token
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET || 'your_secret_key',
+            { expiresIn: '30d' }
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'User registered successfully',
+            data: {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                },
+                token
+            }
+        });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to register user',
+            error: error.message
+        });
+    }
 };
 
 export const login = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    try {
+        const { email, password } = req.body;
 
-  const { email, password } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+        console.log('Login attempt:', email);
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: 'Invalid credentials' });
+        // Find user
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid email or password'
+            });
+        }
 
-    const accessToken = signAccessToken(user);
-    const refreshToken = signRefreshToken(user);
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid email or password'
+            });
+        }
 
-    user.refreshTokens.push(refreshToken);
-    await user.save();
+        // Generate token
+        const token = jwt.sign(
+            { id: user._id },
+            process.env.JWT_SECRET || 'your_secret_key',
+            { expiresIn: '30d' }
+        );
 
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', path: '/api/auth/refresh' });
-    return res.json({ accessToken, user: { id: user._id, email: user.email, name: user.name } });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error' });
-  }
+        res.json({
+            success: true,
+            message: 'Login successful',
+            data: {
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                },
+                token
+            }
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to login',
+            error: error.message
+        });
+    }
 };
 
-export const refresh = async (req, res) => {
-  const token = req.cookies?.refreshToken || req.body?.refreshToken;
-  if (!token) return res.status(401).json({ message: 'Missing refresh token' });
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(payload.id);
-    if (!user) return res.status(401).json({ message: 'Invalid refresh token' });
-
-    // ensure token was issued and stored
-    if (!user.refreshTokens.includes(token)) return res.status(401).json({ message: 'Refresh token revoked' });
-
-    const accessToken = signAccessToken(user);
-    return res.json({ accessToken });
-  } catch (err) {
-    console.error(err);
-    return res.status(401).json({ message: 'Invalid or expired refresh token' });
-  }
+export const getCurrentUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+        res.json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch user',
+            error: error.message
+        });
+    }
 };
 
 export const logout = async (req, res) => {
-  const token = req.cookies?.refreshToken || req.body?.refreshToken;
-  if (!token) return res.status(204).send();
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(payload.id);
-    if (user) {
-      user.refreshTokens = user.refreshTokens.filter(t => t !== token);
-      await user.save();
-    }
-
-    res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
-    return res.status(200).json({ message: 'Logged out' });
-  } catch (err) {
-    console.error(err);
-    // Even if token invalid, clear cookie
-    res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
-    return res.status(200).json({ message: 'Logged out' });
-  }
+    res.json({
+        success: true,
+        message: 'Logged out successfully'
+    });
 };
 
-export default { register, login, refresh, logout };
+export const updateProfile = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const user = await User.findById(req.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        if (name) user.name = name;
+        if (email) user.email = email;
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+        }
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update profile',
+            error: error.message
+        });
+    }
+};
