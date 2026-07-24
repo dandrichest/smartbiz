@@ -1,329 +1,996 @@
 ﻿/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useCallback } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaShoppingBag, FaDollarSign } from 'react-icons/fa';
-import { useAppContext } from '../../context/AppContext';
-import api from '../../api';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaSearch,
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaShoppingBag,
+  FaDollarSign,
+  FaTimes,
+  FaThLarge,
+  FaList,
+  FaEye,
+  FaUsers,
+  FaCrown,
+  FaChartLine,
+  FaEllipsisV,
+  FaSort,
+  FaCalendarAlt,
+} from "react-icons/fa";
+import { useAppContext } from "../../context/AppContext";
+import api from "../../api";
+import toast from "react-hot-toast";
+import "../../styles/CustomerManagement.css";
 
 const CustomerManagement = () => {
-    const [customers, setCustomers] = useState([]);
-    const [filteredCustomers, setFilteredCustomers] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showForm, setShowForm] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-    });
-    const { setLoading } = useAppContext();
+  const [customers, setCustomers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sort, setSort] = useState("");
+  const [viewMode, setViewMode] = useState("grid");
+  const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
+  const { setLoading } = useAppContext();
 
-    const getDemoCustomers = useCallback(() => {
-        return [
-            { _id: 1, name: 'John Doe', email: 'john@email.com', phone: '+1234567890', address: '123 Main St, NY', purchaseCount: 12, totalSpent: 850 },
-            { _id: 2, name: 'Jane Smith', email: 'jane@email.com', phone: '+0987654321', address: '456 Oak Ave, LA', purchaseCount: 8, totalSpent: 620 },
-            { _id: 3, name: 'Mike Johnson', email: 'mike@email.com', phone: '+1122334455', address: '789 Pine Rd, SF', purchaseCount: 6, totalSpent: 450 },
-            { _id: 4, name: 'Sarah Wilson', email: 'sarah@email.com', phone: '+5544332211', address: '321 Elm St, CHI', purchaseCount: 5, totalSpent: 380 },
-            { _id: 5, name: 'David Brown', email: 'david@email.com', phone: '+9988776655', address: '654 Maple Dr, TX', purchaseCount: 4, totalSpent: 290 },
-        ];
-    }, []);
+  const fetchCustomers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/customers");
+      console.log("📋 Customers fetched:", response.data);
+      const customerData = response.data?.data || response.data || [];
+      setCustomers(customerData);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      toast.error("Failed to fetch customers");
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading]);
 
-    const fetchCustomers = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await api.get('/customers');
-            setCustomers(response.data.data || response.data || []);
-            setFilteredCustomers(response.data.data || response.data || []);
-        } catch {
-            toast.error('Failed to fetch customers');
-            const demoData = getDemoCustomers();
-            setCustomers(demoData);
-            setFilteredCustomers(demoData);
-        } finally {
-            setLoading(false);
-        }
-    }, [setLoading, getDemoCustomers]);
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
-    const filterCustomers = useCallback(() => {
-        if (!searchTerm.trim()) {
-            setFilteredCustomers(customers);
-            return;
-        }
-        const term = searchTerm.toLowerCase();
-        const filtered = customers.filter(c =>
-            c.name?.toLowerCase().includes(term) ||
-            c.email?.toLowerCase().includes(term) ||
-            c.phone?.includes(term) ||
-            c.address?.toLowerCase().includes(term)
-        );
-        setFilteredCustomers(filtered);
-    }, [customers, searchTerm]);
+  // ── Filter & sort customers ──
+  const filteredCustomers = useMemo(() => {
+    let result = [...customers];
 
-    useEffect(() => {
-        fetchCustomers();
-    }, [fetchCustomers]);
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      result = result.filter(
+        (c) =>
+          c.firstName?.toLowerCase().includes(q) ||
+          c.lastName?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          c.phone?.includes(q) ||
+          c.address?.toLowerCase().includes(q)
+      );
+    }
 
-    useEffect(() => {
-        filterCustomers();
-    }, [filterCustomers]);
+    if (sort === "name") {
+      result.sort((a, b) =>
+        (a.firstName || "").localeCompare(b.firstName || "")
+      );
+    } else if (sort === "spent-high") {
+      result.sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0));
+    } else if (sort === "spent-low") {
+      result.sort((a, b) => (a.totalSpent || 0) - (b.totalSpent || 0));
+    } else if (sort === "purchases") {
+      result.sort((a, b) => (b.purchaseCount || 0) - (a.purchaseCount || 0));
+    } else if (sort === "recent") {
+      result.sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      );
+    }
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            setLoading(true);
-            if (editingCustomer) {
-                const response = await api.put(`/customers/${editingCustomer._id}`, formData);
-                const updatedCustomer = response.data.data || response.data;
-                setCustomers(customers.map(c => c._id === editingCustomer._id ? updatedCustomer : c));
-                toast.success('Customer updated successfully');
-            } else {
-                const response = await api.post('/customers', formData);
-                const newCustomer = response.data.data || response.data;
-                setCustomers([...customers, newCustomer]);
-                toast.success('Customer added successfully');
-            }
-            resetForm();
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Operation failed');
-        } finally {
-            setLoading(false);
-        }
-    };
+    return result;
+  }, [customers, searchTerm, sort]);
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this customer?')) return;
-        try {
-            setLoading(true);
-            await api.delete(`/customers/${id}`);
-            setCustomers(customers.filter(c => c._id !== id));
-            toast.success('Customer deleted successfully');
-        } catch {
-            toast.error('Failed to delete customer');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEdit = (customer) => {
-        setEditingCustomer(customer);
-        setFormData({
-            name: customer.name || '',
-            email: customer.email || '',
-            phone: customer.phone || '',
-            address: customer.address || '',
-        });
-        setShowForm(true);
-    };
-
-    const resetForm = () => {
-        setShowForm(false);
-        setEditingCustomer(null);
-        setFormData({ name: '', email: '', phone: '', address: '' });
-    };
-
-    return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Customer Management</h1>
-                <button
-                    onClick={() => {
-                        resetForm();
-                        setShowForm(true);
-                    }}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
-                >
-                    <FaPlus />
-                    <span>Add Customer</span>
-                </button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="bg-white rounded-lg shadow p-4 mb-6">
-                <div className="relative">
-                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search customers by name, email, phone, or address..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-                <div className="mt-2 text-sm text-gray-500">
-                    Found {filteredCustomers.length} customers
-                </div>
-            </div>
-
-            {/* Add/Edit Form */}
-            {showForm && (
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 className="text-lg font-semibold mb-4">
-                        {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
-                    </h2>
-                    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                <FaUser className="inline mr-1" /> Name *
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Enter customer name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                <FaEnvelope className="inline mr-1" /> Email
-                            </label>
-                            <input
-                                type="email"
-                                placeholder="Enter email address"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                <FaPhone className="inline mr-1" /> Phone
-                            </label>
-                            <input
-                                type="tel"
-                                placeholder="Enter phone number"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                <FaMapMarkerAlt className="inline mr-1" /> Address
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Enter address"
-                                value={formData.address}
-                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="col-span-2 flex space-x-2">
-                            <button
-                                type="submit"
-                                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                            >
-                                {editingCustomer ? 'Update Customer' : 'Add Customer'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={resetForm}
-                                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            {/* Customer List */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                {filteredCustomers.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500">No customers found</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Customer
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Contact
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Address
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Activity
-                                    </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredCustomers.map((customer) => (
-                                    <tr key={customer._id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                                    <FaUser className="text-blue-600" />
-                                                </div>
-                                                <div className="ml-3">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {customer.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        ID: #{customer._id}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900">
-                                                {customer.email || '-'}
-                                            </div>
-                                            <div className="text-sm text-gray-500">
-                                                {customer.phone || '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-500">
-                                                {customer.address || '-'}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="flex items-center text-sm text-gray-600">
-                                                    <FaShoppingBag className="mr-1" />
-                                                    {customer.purchaseCount || 0}
-                                                </div>
-                                                <div className="flex items-center text-sm text-green-600 font-medium">
-                                                    <FaDollarSign className="mr-1" />
-                                                    ${(customer.totalSpent || 0).toFixed(2)}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={() => handleEdit(customer)}
-                                                className="text-blue-600 hover:text-blue-900 mr-3 transition-colors"
-                                            >
-                                                <FaEdit className="inline" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(customer._id)}
-                                                className="text-red-600 hover:text-red-900 transition-colors"
-                                            >
-                                                <FaTrash className="inline" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
+  // ── Stats ──
+  const stats = useMemo(() => {
+    const total = customers.length;
+    const totalRevenue = customers.reduce(
+      (sum, c) => sum + (c.totalSpent || 0),
+      0
     );
+    const totalPurchases = customers.reduce(
+      (sum, c) => sum + (c.purchaseCount || 0),
+      0
+    );
+    const vips = customers.filter((c) => (c.totalSpent || 0) >= 1000).length;
+    return { total, totalRevenue, totalPurchases, vips };
+  }, [customers]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.firstName || formData.firstName.trim() === "") {
+      toast.error("First name is required");
+      return;
+    }
+    if (!formData.lastName || formData.lastName.trim() === "") {
+      toast.error("Last name is required");
+      return;
+    }
+    if (!formData.email || formData.email.trim() === "") {
+      toast.error("Email is required");
+      return;
+    }
+    if (!formData.phone || formData.phone.trim() === "") {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const customerData = {
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address ? formData.address.trim() : "",
+      };
+
+      console.log("📤 Sending customer data:", customerData);
+
+      if (editingCustomer) {
+        const response = await api.put(
+          `/customers/${editingCustomer._id}`,
+          customerData
+        );
+        console.log("📥 Update response:", response.data);
+
+        const updatedCustomer =
+          response.data?.customer || response.data?.data || response.data;
+
+        if (updatedCustomer && updatedCustomer._id) {
+          setCustomers(
+            customers.map((c) =>
+              c._id === editingCustomer._id ? updatedCustomer : c
+            )
+          );
+          toast.success("Customer updated successfully!");
+        } else {
+          await fetchCustomers();
+          toast.success("Customer updated successfully!");
+        }
+      } else {
+        const response = await api.post("/customers", customerData);
+        console.log("📥 Response:", response.data);
+
+        const newCustomer =
+          response.data?.customer || response.data?.data || response.data;
+
+        if (newCustomer && newCustomer._id) {
+          setCustomers([newCustomer, ...customers]);
+          toast.success("Customer added successfully!");
+        } else {
+          console.log("⚠️ No valid customer in response, refetching...");
+          await fetchCustomers();
+          toast.success("Customer added successfully!");
+        }
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error("Error saving customer:", error);
+      console.error("Error response:", error.response?.data);
+
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save customer. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this customer?"))
+      return;
+    try {
+      setLoading(true);
+      await api.delete(`/customers/${id}`);
+      setCustomers(customers.filter((c) => c._id !== id));
+      toast.success("Customer deleted successfully");
+      setActiveMenu(null);
+      if (selectedCustomer?._id === id) closeDetail();
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      toast.error(error.response?.data?.message || "Failed to delete customer");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      firstName: customer.firstName || "",
+      lastName: customer.lastName || "",
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || "",
+    });
+    setShowForm(true);
+    setActiveMenu(null);
+    setShowDetail(false);
+  };
+
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingCustomer(null);
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+    });
+    setIsSubmitting(false);
+  };
+
+  const openDetail = (customer) => {
+    setSelectedCustomer(customer);
+    setShowDetail(true);
+  };
+
+  const closeDetail = () => {
+    setShowDetail(false);
+    setTimeout(() => setSelectedCustomer(null), 200);
+  };
+
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount || 0);
+
+  const getInitials = (customer) => {
+    if (!customer) return "U";
+    const firstName = customer.firstName || "";
+    const lastName = customer.lastName || "";
+    if (firstName && lastName)
+      return (firstName[0] + lastName[0]).toUpperCase();
+    if (firstName) return firstName[0].toUpperCase();
+    return "U";
+  };
+
+  const getDisplayName = (customer) => {
+    if (!customer) return "Unnamed";
+    return (
+      `${customer.firstName || ""} ${customer.lastName || ""}`.trim() ||
+      "Unnamed"
+    );
+  };
+
+  const getAvatarGradient = (id) => {
+    const gradients = [
+      "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+      "linear-gradient(135deg, #10b981, #14b8a6)",
+      "linear-gradient(135deg, #f59e0b, #ef4444)",
+      "linear-gradient(135deg, #ec4899, #8b5cf6)",
+      "linear-gradient(135deg, #06b6d4, #3b82f6)",
+      "linear-gradient(135deg, #84cc16, #10b981)",
+      "linear-gradient(135deg, #f97316, #ec4899)",
+      "linear-gradient(135deg, #6366f1, #a855f7)",
+    ];
+    const str = id?.toString() || "0";
+    const hash = str
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return gradients[hash % gradients.length];
+  };
+
+  const getTier = (spent) => {
+    if (spent >= 5000)
+      return { label: "Platinum", variant: "platinum", icon: "💎" };
+    if (spent >= 1000) return { label: "VIP", variant: "vip", icon: "👑" };
+    if (spent >= 500) return { label: "Gold", variant: "gold", icon: "⭐" };
+    return null;
+  };
+
+  const clearSearch = () => setSearchTerm("");
+
+  return (
+    <div className="cm-wrapper">
+      {/* ── Top Bar ── */}
+      <header className="cm-topbar">
+        <div className="cm-topbar-left">
+          <h1 className="cm-title">
+            <span className="cm-title-icon">
+              <FaUsers />
+            </span>
+            Customers
+          </h1>
+          <p className="cm-subtitle">
+            Manage your customer relationships and track engagement
+          </p>
+        </div>
+
+        <button
+          className="cm-add-btn"
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+        >
+          <FaPlus />
+          <span>Add Customer</span>
+        </button>
+      </header>
+
+      {/* ── Stats Row ── */}
+      <section className="cm-stats-row" aria-label="Customer statistics">
+        <div className="cm-stat cm-stat--blue">
+          <div className="cm-stat-icon">
+            <FaUsers />
+          </div>
+          <div className="cm-stat-body">
+            <div className="cm-stat-value">{stats.total}</div>
+            <div className="cm-stat-label">Total Customers</div>
+          </div>
+        </div>
+
+        <div className="cm-stat cm-stat--emerald">
+          <div className="cm-stat-icon">
+            <FaDollarSign />
+          </div>
+          <div className="cm-stat-body">
+            <div className="cm-stat-value">
+              {formatCurrency(stats.totalRevenue)}
+            </div>
+            <div className="cm-stat-label">Total Revenue</div>
+          </div>
+        </div>
+
+        <div className="cm-stat cm-stat--violet">
+          <div className="cm-stat-icon">
+            <FaShoppingBag />
+          </div>
+          <div className="cm-stat-body">
+            <div className="cm-stat-value">{stats.totalPurchases}</div>
+            <div className="cm-stat-label">Total Purchases</div>
+          </div>
+        </div>
+
+        <div className="cm-stat cm-stat--amber">
+          <div className="cm-stat-icon">
+            <FaCrown />
+          </div>
+          <div className="cm-stat-body">
+            <div className="cm-stat-value">{stats.vips}</div>
+            <div className="cm-stat-label">VIP Customers</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Toolbar ── */}
+      <section className="cm-toolbar" aria-label="Search and filter">
+        <div className="cm-search-box">
+          <FaSearch className="cm-search-icon" />
+          <input
+            type="text"
+            placeholder="Search by name, email, phone, or address..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="cm-search-input"
+          />
+          {searchTerm && (
+            <button
+              className="cm-search-clear"
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              <FaTimes />
+            </button>
+          )}
+        </div>
+
+        <div className="cm-filters">
+          <div className="cm-select-wrap">
+            <FaSort className="cm-select-icon" />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="cm-select"
+            >
+              <option value="">Sort by</option>
+              <option value="recent">Most Recent</option>
+              <option value="name">Name (A-Z)</option>
+              <option value="spent-high">Highest Spender</option>
+              <option value="spent-low">Lowest Spender</option>
+              <option value="purchases">Most Purchases</option>
+            </select>
+          </div>
+
+          <div className="cm-view-toggle">
+            <button
+              className={`cm-view-btn ${viewMode === "grid" ? "active" : ""}`}
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+            >
+              <FaThLarge />
+            </button>
+            <button
+              className={`cm-view-btn ${viewMode === "list" ? "active" : ""}`}
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+            >
+              <FaList />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Results ── */}
+      <div className="cm-results-bar">
+        <span className="cm-results-count">
+          <strong>{filteredCustomers.length}</strong> of{" "}
+          <strong>{customers.length}</strong> customers
+        </span>
+        {searchTerm && (
+          <button className="cm-clear-filters" onClick={clearSearch}>
+            Clear search
+          </button>
+        )}
+      </div>
+
+      {/* ── Customer Display ── */}
+      {filteredCustomers.length === 0 ? (
+        <div className="cm-empty">
+          <div className="cm-empty-icon">👥</div>
+          <h3>No customers found</h3>
+          <p>
+            {searchTerm
+              ? "Try adjusting your search"
+              : "Add your first customer to get started"}
+          </p>
+          {!searchTerm && (
+            <button
+              className="cm-empty-action"
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
+            >
+              <FaPlus /> Add Your First Customer
+            </button>
+          )}
+        </div>
+      ) : viewMode === "grid" ? (
+        <section className="cm-grid" aria-label="Customers grid">
+          {filteredCustomers.map((customer, i) => {
+            const tier = getTier(customer.totalSpent || 0);
+            return (
+              <article
+                key={customer._id}
+                className="cm-card"
+                onClick={() => openDetail(customer)}
+                style={{ animationDelay: `${i * 40}ms` }}
+              >
+                {tier && (
+                  <div className={`cm-tier-badge cm-tier--${tier.variant}`}>
+                    <span>{tier.icon}</span> {tier.label}
+                  </div>
+                )}
+
+                <div className="cm-card-menu">
+                  <button
+                    className="cm-menu-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenu(
+                        activeMenu === customer._id ? null : customer._id
+                      );
+                    }}
+                    aria-label="More actions"
+                  >
+                    <FaEllipsisV />
+                  </button>
+                  {activeMenu === customer._id && (
+                    <div
+                      className="cm-menu-dropdown"
+                      onMouseLeave={() => setActiveMenu(null)}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(customer);
+                          setActiveMenu(null);
+                        }}
+                      >
+                        <FaEye /> View
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(customer);
+                        }}
+                      >
+                        <FaEdit /> Edit
+                      </button>
+                      <button
+                        className="danger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(customer._id);
+                        }}
+                      >
+                        <FaTrash /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="cm-card-header">
+                  <div
+                    className="cm-avatar"
+                    style={{ background: getAvatarGradient(customer._id) }}
+                  >
+                    {getInitials(customer)}
+                  </div>
+                  <h3 className="cm-card-name" title={getDisplayName(customer)}>
+                    {getDisplayName(customer)}
+                  </h3>
+                  <span className="cm-card-id">
+                    #{customer._id?.toString().slice(-6) || "N/A"}
+                  </span>
+                </div>
+
+                <div className="cm-card-contact">
+                  {customer.email && (
+                    <div className="cm-contact-item">
+                      <FaEnvelope />
+                      <span title={customer.email}>{customer.email}</span>
+                    </div>
+                  )}
+                  {customer.phone && (
+                    <div className="cm-contact-item">
+                      <FaPhone />
+                      <span>{customer.phone}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="cm-card-stats">
+                  <div className="cm-card-stat">
+                    <span className="cm-card-stat-label">
+                      <FaShoppingBag /> Purchases
+                    </span>
+                    <span className="cm-card-stat-value">
+                      {customer.purchaseCount || 0}
+                    </span>
+                  </div>
+                  <div className="cm-card-stat">
+                    <span className="cm-card-stat-label">
+                      <FaDollarSign /> Total Spent
+                    </span>
+                    <span className="cm-card-stat-value cm-stat-money">
+                      {formatCurrency(customer.totalSpent || 0)}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      ) : (
+        <section className="cm-list" aria-label="Customers list">
+          {filteredCustomers.map((customer, i) => {
+            const tier = getTier(customer.totalSpent || 0);
+            return (
+              <div
+                key={customer._id}
+                className="cm-list-row"
+                onClick={() => openDetail(customer)}
+                style={{ animationDelay: `${i * 30}ms` }}
+              >
+                <div
+                  className="cm-list-avatar"
+                  style={{ background: getAvatarGradient(customer._id) }}
+                >
+                  {getInitials(customer)}
+                </div>
+
+                <div className="cm-list-info">
+                  <div className="cm-list-top">
+                    <h3 className="cm-list-name">{getDisplayName(customer)}</h3>
+                    {tier && (
+                      <span className={`cm-tier-pill cm-tier--${tier.variant}`}>
+                        <span>{tier.icon}</span> {tier.label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="cm-list-meta">
+                    {customer.email && (
+                      <span className="cm-list-meta-item">
+                        <FaEnvelope /> {customer.email}
+                      </span>
+                    )}
+                    {customer.phone && (
+                      <span className="cm-list-meta-item">
+                        <FaPhone /> {customer.phone}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="cm-list-metrics">
+                  <div className="cm-list-metric">
+                    <span className="cm-metric-label">Purchases</span>
+                    <span className="cm-metric-value">
+                      {customer.purchaseCount || 0}
+                    </span>
+                  </div>
+                  <div className="cm-list-metric">
+                    <span className="cm-metric-label">Total Spent</span>
+                    <span className="cm-metric-value cm-money">
+                      {formatCurrency(customer.totalSpent || 0)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="cm-list-actions">
+                  <button
+                    className="cm-icon-btn edit"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(customer);
+                    }}
+                    title="Edit"
+                  >
+                    <FaEdit />
+                  </button>
+                  <button
+                    className="cm-icon-btn delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(customer._id);
+                    }}
+                    title="Delete"
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {/* ── Add/Edit Form Modal ── */}
+      {showForm && (
+        <div className="cm-modal-overlay" onClick={resetForm}>
+          <div
+            className="cm-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="cm-modal-head">
+              <div className="cm-modal-head-left">
+                <div className="cm-modal-head-icon">
+                  {editingCustomer ? <FaEdit /> : <FaPlus />}
+                </div>
+                <div>
+                  <h2>
+                    {editingCustomer ? "Edit Customer" : "Add New Customer"}
+                  </h2>
+                  <p>
+                    {editingCustomer
+                      ? "Update customer information"
+                      : "Add a new customer to your database"}
+                  </p>
+                </div>
+              </div>
+              <button
+                className="cm-modal-close"
+                onClick={resetForm}
+                aria-label="Close"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="cm-modal-form">
+              <div className="cm-form-row">
+                <div className="cm-form-group">
+                  <label>
+                    <FaUser /> First Name <span className="req">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. John"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="cm-form-group">
+                  <label>
+                    <FaUser /> Last Name <span className="req">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Doe"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="cm-form-group">
+                <label>
+                  <FaEnvelope /> Email <span className="req">*</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="john@example.com"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="cm-form-group">
+                <label>
+                  <FaPhone /> Phone <span className="req">*</span>
+                </label>
+                <input
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="cm-form-group">
+                <label>
+                  <FaMapMarkerAlt /> Address
+                </label>
+                <textarea
+                  placeholder="Enter customer address..."
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  rows="3"
+                />
+              </div>
+
+              <div className="cm-modal-actions">
+                <button
+                  type="button"
+                  className="cm-btn-secondary"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="cm-btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    "Saving..."
+                  ) : editingCustomer ? (
+                    <>
+                      <FaEdit /> Update Customer
+                    </>
+                  ) : (
+                    <>
+                      <FaPlus /> Add Customer
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Detail Modal ── */}
+      {showDetail && selectedCustomer && (
+        <div
+          className="cm-modal-overlay"
+          onClick={closeDetail}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="cm-modal cm-detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cm-detail-hero">
+              <div
+                className="cm-detail-hero-bg"
+                style={{ background: getAvatarGradient(selectedCustomer._id) }}
+              />
+              <button
+                className="cm-modal-close cm-detail-close"
+                onClick={closeDetail}
+              >
+                <FaTimes />
+              </button>
+
+              <div
+                className="cm-detail-avatar"
+                style={{ background: getAvatarGradient(selectedCustomer._id) }}
+              >
+                {getInitials(selectedCustomer)}
+              </div>
+
+              <h2 className="cm-detail-name">
+                {getDisplayName(selectedCustomer)}
+              </h2>
+              <span className="cm-detail-id">
+                #{selectedCustomer._id?.toString().slice(-6)}
+              </span>
+
+              {(() => {
+                const tier = getTier(selectedCustomer.totalSpent || 0);
+                return tier ? (
+                  <span className={`cm-detail-tier cm-tier--${tier.variant}`}>
+                    <span>{tier.icon}</span> {tier.label} Customer
+                  </span>
+                ) : null;
+              })()}
+            </div>
+
+            <div className="cm-detail-body">
+              {/* Metrics */}
+              <div className="cm-detail-metrics">
+                <div className="cm-detail-metric">
+                  <div className="cm-detail-metric-icon cm-metric--emerald">
+                    <FaDollarSign />
+                  </div>
+                  <div>
+                    <span className="cm-detail-metric-label">Total Spent</span>
+                    <span className="cm-detail-metric-value">
+                      {formatCurrency(selectedCustomer.totalSpent || 0)}
+                    </span>
+                  </div>
+                </div>
+                <div className="cm-detail-metric">
+                  <div className="cm-detail-metric-icon cm-metric--blue">
+                    <FaShoppingBag />
+                  </div>
+                  <div>
+                    <span className="cm-detail-metric-label">Purchases</span>
+                    <span className="cm-detail-metric-value">
+                      {selectedCustomer.purchaseCount || 0}
+                    </span>
+                  </div>
+                </div>
+                <div className="cm-detail-metric">
+                  <div className="cm-detail-metric-icon cm-metric--violet">
+                    <FaChartLine />
+                  </div>
+                  <div>
+                    <span className="cm-detail-metric-label">Avg Order</span>
+                    <span className="cm-detail-metric-value">
+                      {formatCurrency(
+                        (selectedCustomer.totalSpent || 0) /
+                          Math.max(selectedCustomer.purchaseCount || 1, 1)
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div className="cm-detail-section">
+                <h3>Contact Information</h3>
+                <div className="cm-detail-info-grid">
+                  <div className="cm-detail-info-item">
+                    <div className="cm-info-icon">
+                      <FaEnvelope />
+                    </div>
+                    <div>
+                      <span className="cm-info-label">Email</span>
+                      <span className="cm-info-value">
+                        {selectedCustomer.email || "—"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="cm-detail-info-item">
+                    <div className="cm-info-icon">
+                      <FaPhone />
+                    </div>
+                    <div>
+                      <span className="cm-info-label">Phone</span>
+                      <span className="cm-info-value">
+                        {selectedCustomer.phone || "—"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="cm-detail-info-item cm-info-full">
+                    <div className="cm-info-icon">
+                      <FaMapMarkerAlt />
+                    </div>
+                    <div>
+                      <span className="cm-info-label">Address</span>
+                      <span className="cm-info-value">
+                        {selectedCustomer.address || "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Meta */}
+              {selectedCustomer.createdAt && (
+                <div className="cm-detail-meta">
+                  <div className="cm-meta-item">
+                    <FaCalendarAlt />
+                    <span>
+                      Customer since{" "}
+                      {new Date(selectedCustomer.createdAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="cm-modal-actions">
+              <button
+                className="cm-btn-secondary"
+                onClick={() => handleDelete(selectedCustomer._id)}
+              >
+                <FaTrash /> Delete
+              </button>
+              <button
+                className="cm-btn-primary"
+                onClick={() => handleEdit(selectedCustomer)}
+              >
+                <FaEdit /> Edit Customer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default CustomerManagement;

@@ -1,29 +1,85 @@
-import { Link } from 'react-router-dom';
-import '../../styles/Footer.css';
+/* eslint-disable no-unused-vars */
+import { Link } from "react-router-dom";
+import { FaBox, FaHeart, FaGithub, FaTwitter, FaLinkedin } from "react-icons/fa";
+import "../../styles/Footer.css";
 
 const Footer = () => {
-    const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+  const appVersion = "v2.1.0";
 
-    return (
-        <footer className="footer">
-            <div className="footer-inner">
-                <div className="footer-left">
-                    <span className="footer-logo">📦 SmartBiz</span>
-                    <span className="footer-divider">|</span>
-                    <span className="footer-copyright">© {currentYear} SmartBiz</span>
-                </div>
-                <div className="footer-right">
-                    <Link to="/privacy">Privacy</Link>
-                    <span className="footer-divider">|</span>
-                    <Link to="/terms">Terms</Link>
-                    <span className="footer-divider">|</span>
-                    <Link to="/support">Support</Link>
-                    <span className="footer-divider">|</span>
-                    <span className="footer-version">v2.1.0</span>
-                </div>
+  return (
+    <footer className="ft">
+      <div className="ft-inner">
+        {/* Left: Brand & Copyright */}
+        <div className="ft-left">
+          <div className="ft-brand">
+            <div className="ft-brand-icon">
+              <FaBox />
             </div>
-        </footer>
-    );
+            <span className="ft-brand-name">SmartBiz</span>
+          </div>
+          <span className="ft-separator" />
+          <span className="ft-copyright">
+            © {currentYear} SmartBiz. Made for business owners
+          </span>
+        </div>
+
+        {/* Right: Links & Version */}
+        <div className="ft-right">
+          <nav className="ft-links">
+            <Link to="/privacy" className="ft-link">
+              Privacy
+            </Link>
+            <Link to="/terms" className="ft-link">
+              Terms
+            </Link>
+            <Link to="/support" className="ft-link">
+              Support
+            </Link>
+          </nav>
+
+          <span className="ft-separator" />
+
+          <div className="ft-socials">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ft-social"
+              aria-label="GitHub"
+            >
+              <FaGithub />
+            </a>
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ft-social"
+              aria-label="Twitter"
+            >
+              <FaTwitter />
+            </a>
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ft-social"
+              aria-label="LinkedIn"
+            >
+              <FaLinkedin />
+            </a>
+          </div>
+
+          <span className="ft-separator" />
+
+          <span className="ft-version">
+            <span className="ft-version-dot" />
+            {appVersion}
+          </span>
+        </div>
+      </div>
+    </footer>
+  );
 };
 
 export default Footer;

@@ -1,5 +1,4 @@
-﻿/* eslint-disable react-hooks/purity */
-/* eslint-disable react-hooks/set-state-in-effect */
+﻿/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -30,7 +29,9 @@ import {
     FaTag,
     FaUserPlus,
     FaPercentage,
-    FaClock
+    FaClock,
+    FaSync,
+    FaTimes
 } from 'react-icons/fa';
 import { useAppContext } from '../../context/AppContext';
 import api from '../../api';
@@ -79,128 +80,115 @@ const AnalyticsDashboard = () => {
         }
     });
     const { setLoading } = useAppContext();
-    const errorShownRef = useRef(false);
+    const intervalRef = useRef(null);
 
-    const getDemoData = useCallback(() => {
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        return {
-            sales: days.map((day, i) => ({ 
-                date: day, 
-                total: [12, 18, 15, 25, 30, 22, 20][i] || Math.floor(Math.random() * 30) + 10 
-            })),
-            revenue: days.map((day, i) => ({ 
-                date: day, 
-                revenue: [350, 520, 480, 780, 920, 650, 580][i] || Math.floor(Math.random() * 1000) + 200 
-            })),
-            products: [
-                { name: 'Premium Cotton Fabric', unitsSold: 45, revenue: 720, growth: 12 },
-                { name: 'Silk Blend Fabric', unitsSold: 30, revenue: 900, growth: 8 },
-                { name: 'Leather Wallet', unitsSold: 25, revenue: 625, growth: -3 },
-                { name: 'Cotton Thread', unitsSold: 60, revenue: 300, growth: 15 },
-                { name: 'Sewing Machine', unitsSold: 10, revenue: 2000, growth: 5 },
-            ],
-            customers: [
-                { name: 'John Doe', purchases: 12, totalSpent: 850 },
-                { name: 'Jane Smith', purchases: 8, totalSpent: 620 },
-                { name: 'Mike Johnson', purchases: 6, totalSpent: 450 },
-                { name: 'Sarah Wilson', purchases: 4, totalSpent: 380 },
-                { name: 'Tom Brown', purchases: 3, totalSpent: 290 },
-            ],
-            categories: [
-                { category: 'Fabrics', count: 45, revenue: 2100, percentage: 35 },
-                { category: 'Accessories', count: 30, revenue: 1200, percentage: 20 },
-                { category: 'Supplies', count: 25, revenue: 450, percentage: 15 },
-                { category: 'Equipment', count: 15, revenue: 2500, percentage: 30 },
-            ],
-            summary: {
-                totalSales: 165,
-                totalRevenue: 6250,
-                totalCustomers: 120,
-                averageOrderValue: 37.88,
-                topProduct: 'Sewing Machine',
-                topCategory: 'Equipment'
-            }
-        };
-    }, []);
-
-    const fetchAnalytics = useCallback(async () => {
+    const fetchAnalytics = useCallback(async (showToast = false) => {
         try {
             setLoadingState(true);
             setLoading(true);
             
-            try {
-                const response = await api.get('/analytics', { params: dateRange });
-                let data = response.data;
-                if (data) {
-                    if (data.data) {
-                        data = data.data;
+            const response = await api.get('/analytics', { params: dateRange });
+            console.log('📊 Analytics data:', response.data);
+            
+            if (response.data?.success && response.data?.data) {
+                const data = response.data.data;
+                setAnalytics({
+                    sales: data.sales || [],
+                    revenue: data.revenue || [],
+                    products: data.products || [],
+                    customers: data.customers || [],
+                    categories: data.categories || [],
+                    summary: data.summary || {
+                        totalSales: 0,
+                        totalRevenue: 0,
+                        totalCustomers: 0,
+                        averageOrderValue: 0,
+                        topProduct: '',
+                        topCategory: ''
                     }
-                    setAnalytics({
-                        sales: data.sales || [],
-                        revenue: data.revenue || [],
-                        products: data.products || [],
-                        customers: data.customers || [],
-                        categories: data.categories || [],
-                        summary: data.summary || {
-                            totalSales: 0,
-                            totalRevenue: 0,
-                            totalCustomers: 0,
-                            averageOrderValue: 0,
-                            topProduct: '',
-                            topCategory: ''
-                        }
-                    });
-                    // Reset error flag on success
-                    errorShownRef.current = false;
-                } else {
-                    setAnalytics(getDemoData());
+                });
+                if (showToast) {
+                    toast.success('📊 Analytics updated successfully!');
                 }
-            } catch (error) {
-                // Silent fail for 404 - backend not running
-                if (error.response?.status === 404) {
-                    // Only show once
-                    if (!errorShownRef.current) {
-                        errorShownRef.current = true;
-                        console.warn('📊 Analytics endpoint not found. Using demo data.');
+            } else {
+                setAnalytics({
+                    sales: [],
+                    revenue: [],
+                    products: [],
+                    customers: [],
+                    categories: [],
+                    summary: {
+                        totalSales: 0,
+                        totalRevenue: 0,
+                        totalCustomers: 0,
+                        averageOrderValue: 0,
+                        topProduct: '',
+                        topCategory: ''
                     }
-                    setAnalytics(getDemoData());
-                    return;
+                });
+                if (showToast) {
+                    toast.info('No analytics data available');
                 }
-                
-                // Handle network errors
-                if (error.code === 'ERR_NETWORK') {
-                    if (!errorShownRef.current) {
-                        errorShownRef.current = true;
-                        console.warn('📊 Network error. Using demo data.');
-                    }
-                    setAnalytics(getDemoData());
-                    return;
-                }
-                
-                // Handle other errors - show toast only once
-                console.error('API Error fetching analytics:', error);
-                if (!errorShownRef.current) {
-                    errorShownRef.current = true;
-                    toast.error('Failed to fetch analytics data. Using demo data.');
-                }
-                setAnalytics(getDemoData());
             }
         } catch (error) {
-            console.error('Error:', error);
-            setAnalytics(getDemoData());
+            console.error('Error fetching analytics:', error);
+            
+            if (error.response?.status === 404) {
+                toast.error('Analytics endpoint not found. Please check your backend.');
+            } else if (error.code === 'ERR_NETWORK') {
+                toast.error('Network error. Please check your connection.');
+            } else {
+                toast.error(error.response?.data?.message || 'Failed to fetch analytics data');
+            }
+            
+            setAnalytics({
+                sales: [],
+                revenue: [],
+                products: [],
+                customers: [],
+                categories: [],
+                summary: {
+                    totalSales: 0,
+                    totalRevenue: 0,
+                    totalCustomers: 0,
+                    averageOrderValue: 0,
+                    topProduct: '',
+                    topCategory: ''
+                }
+            });
         } finally {
             setLoadingState(false);
             setLoading(false);
         }
-    }, [dateRange, setLoading, getDemoData]);
+    }, [dateRange, setLoading]);
 
+    // Initial fetch
     useEffect(() => {
-        fetchAnalytics();
-        // Reset error flag on unmount
+        fetchAnalytics(false);
+    }, [fetchAnalytics]);
+
+    // Setup real-time updates (every 30 seconds)
+    useEffect(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+        
+        intervalRef.current = setInterval(() => {
+            console.log('🔄 Refreshing analytics data...');
+            fetchAnalytics(false);
+        }, 30000);
+        
         return () => {
-            errorShownRef.current = false;
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
         };
     }, [fetchAnalytics]);
+
+    const handleManualRefresh = () => {
+        fetchAnalytics(true);
+    };
 
     const exportData = () => {
         try {
@@ -233,7 +221,7 @@ const AnalyticsDashboard = () => {
         }
     };
 
-    // Chart configurations with professional styling
+    // Chart configurations
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -271,10 +259,10 @@ const AnalyticsDashboard = () => {
     };
 
     const salesChartData = {
-        labels: analytics.sales.map(item => item.date),
+        labels: analytics.sales.map(item => item.date || ''),
         datasets: [{
             label: 'Sales',
-            data: analytics.sales.map(item => item.total),
+            data: analytics.sales.map(item => item.total || 0),
             backgroundColor: 'rgba(59, 130, 246, 0.2)',
             borderColor: '#3B82F6',
             borderWidth: 3,
@@ -288,10 +276,10 @@ const AnalyticsDashboard = () => {
     };
 
     const revenueChartData = {
-        labels: analytics.revenue.map(item => item.date),
+        labels: analytics.revenue.map(item => item.date || ''),
         datasets: [{
             label: 'Revenue',
-            data: analytics.revenue.map(item => item.revenue),
+            data: analytics.revenue.map(item => item.revenue || 0),
             backgroundColor: 'rgba(16, 185, 129, 0.2)',
             borderColor: '#10B981',
             borderWidth: 3,
@@ -305,10 +293,12 @@ const AnalyticsDashboard = () => {
     };
 
     const productChartData = {
-        labels: analytics.products.map(item => item.name.length > 12 ? item.name.slice(0, 12) + '...' : item.name),
+        labels: analytics.products.map(item => 
+            item.name?.length > 12 ? item.name.slice(0, 12) + '...' : item.name || 'Unknown'
+        ),
         datasets: [{
             label: 'Revenue ($)',
-            data: analytics.products.map(item => item.revenue),
+            data: analytics.products.map(item => item.revenue || 0),
             backgroundColor: analytics.products.map((_, i) => 
                 ['rgba(59, 130, 246, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)'][i % 5]
             ),
@@ -321,9 +311,9 @@ const AnalyticsDashboard = () => {
     };
 
     const categoryChartData = {
-        labels: analytics.categories.map(item => item.category),
+        labels: analytics.categories.map(item => item.category || 'Uncategorized'),
         datasets: [{
-            data: analytics.categories.map(item => item.count),
+            data: analytics.categories.map(item => item.count || 0),
             backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
             borderColor: ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED'],
             borderWidth: 2,
@@ -331,10 +321,10 @@ const AnalyticsDashboard = () => {
     };
 
     const customerChartData = {
-        labels: analytics.customers.map(item => item.name),
+        labels: analytics.customers.map(item => item.name || 'Unknown'),
         datasets: [{
             label: 'Total Spent ($)',
-            data: analytics.customers.map(item => item.totalSpent),
+            data: analytics.customers.map(item => item.totalSpent || 0),
             backgroundColor: 'rgba(139, 92, 246, 0.7)',
             borderColor: '#8B5CF6',
             borderWidth: 2,
@@ -347,8 +337,13 @@ const AnalyticsDashboard = () => {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2,
-        }).format(amount);
+        }).format(amount || 0);
     };
+
+    const hasData = analytics.sales.length > 0 || 
+                    analytics.revenue.length > 0 || 
+                    analytics.products.length > 0 ||
+                    analytics.summary.totalSales > 0;
 
     if (loading) {
         return (
@@ -383,8 +378,8 @@ const AnalyticsDashboard = () => {
                             value={dateRange.end}
                             onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
                         />
-                        <button onClick={fetchAnalytics} className="update-btn">
-                            Update
+                        <button onClick={handleManualRefresh} className="update-btn">
+                            <FaSync /> Update
                         </button>
                     </div>
                     <button onClick={exportData} className="export-btn">
@@ -393,183 +388,179 @@ const AnalyticsDashboard = () => {
                 </div>
             </div>
 
-            {/* Summary Cards */}
-            <div className="summary-grid">
-                <div className="summary-card blue">
-                    <div className="summary-card-content">
-                        <div className="summary-left">
-                            <span className="summary-label">Total Sales</span>
-                            <span className="summary-value">{analytics.summary.totalSales}</span>
-                            <span className="summary-trend positive">
-                                <FaArrowUp /> 12.5%
-                            </span>
-                        </div>
-                        <div className="summary-icon blue">
-                            <FaShoppingCart />
-                        </div>
-                    </div>
+            {/* No Data State */}
+            {!hasData ? (
+                <div className="no-data-state">
+                    <div className="no-data-icon">📊</div>
+                    <h3>No Analytics Data Available</h3>
+                    <p>Start making sales to see your analytics data here.</p>
+                    <p className="no-data-hint">Try adjusting your date range or check back later.</p>
                 </div>
-
-                <div className="summary-card green">
-                    <div className="summary-card-content">
-                        <div className="summary-left">
-                            <span className="summary-label">Revenue</span>
-                            <span className="summary-value">{formatCurrency(analytics.summary.totalRevenue)}</span>
-                            <span className="summary-trend positive">
-                                <FaArrowUp /> 8.3%
-                            </span>
-                        </div>
-                        <div className="summary-icon green">
-                            <FaDollarSign />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="summary-card purple">
-                    <div className="summary-card-content">
-                        <div className="summary-left">
-                            <span className="summary-label">Customers</span>
-                            <span className="summary-value">{analytics.summary.totalCustomers}</span>
-                            <span className="summary-trend positive">
-                                <FaArrowUp /> 5.7%
-                            </span>
-                        </div>
-                        <div className="summary-icon purple">
-                            <FaUsers />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="summary-card yellow">
-                    <div className="summary-card-content">
-                        <div className="summary-left">
-                            <span className="summary-label">Avg Order Value</span>
-                            <span className="summary-value">{formatCurrency(analytics.summary.averageOrderValue)}</span>
-                            <span className="summary-trend negative">
-                                <FaArrowDown /> 2.1%
-                            </span>
-                        </div>
-                        <div className="summary-icon yellow">
-                            <FaBox />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Charts Row 1 */}
-            <div className="charts-row">
-                <div className="chart-card">
-                    <div className="chart-card-header">
-                        <h3><FaChartLine className="chart-icon blue" /> Sales Trend</h3>
-                        <span className="chart-period">Last 7 days</span>
-                    </div>
-                    <div className="chart-container">
-                        <Line data={salesChartData} options={chartOptions} />
-                    </div>
-                </div>
-                <div className="chart-card">
-                    <div className="chart-card-header">
-                        <h3><FaChartLine className="chart-icon green" /> Revenue Trend</h3>
-                        <span className="chart-period">Last 7 days</span>
-                    </div>
-                    <div className="chart-container">
-                        <Line data={revenueChartData} options={chartOptions} />
-                    </div>
-                </div>
-            </div>
-
-            {/* Charts Row 2 */}
-            <div className="charts-row">
-                <div className="chart-card">
-                    <div className="chart-card-header">
-                        <h3><FaTrophy className="chart-icon yellow" /> Top Products</h3>
-                        <span className="chart-period">By revenue</span>
-                    </div>
-                    <div className="chart-container">
-                        <Bar data={productChartData} options={{
-                            ...chartOptions,
-                            plugins: {
-                                ...chartOptions.plugins,
-                                legend: { display: false }
-                            }
-                        }} />
-                    </div>
-                </div>
-                <div className="chart-card">
-                    <div className="chart-card-header">
-                        <h3><FaTag className="chart-icon purple" /> Category Distribution</h3>
-                        <span className="chart-period">By product count</span>
-                    </div>
-                    <div className="chart-container" style={{ maxHeight: '280px' }}>
-                        <Doughnut data={categoryChartData} options={{
-                            ...chartOptions,
-                            plugins: {
-                                ...chartOptions.plugins,
-                                legend: { position: 'right' }
-                            }
-                        }} />
-                    </div>
-                </div>
-            </div>
-
-            {/* Charts Row 3 */}
-            <div className="charts-row">
-                <div className="chart-card">
-                    <div className="chart-card-header">
-                        <h3><FaUserPlus className="chart-icon purple" /> Top Customers</h3>
-                        <span className="chart-period">By total spent</span>
-                    </div>
-                    <div className="chart-container">
-                        <Bar data={customerChartData} options={{
-                            ...chartOptions,
-                            plugins: {
-                                ...chartOptions.plugins,
-                                legend: { display: false }
-                            }
-                        }} />
-                    </div>
-                </div>
-                <div className="chart-card insights-card">
-                    <div className="chart-card-header">
-                        <h3><FaClock className="chart-icon blue" /> Key Insights</h3>
-                        <span className="chart-period">Quick overview</span>
-                    </div>
-                    <div className="insights-grid">
-                        <div className="insight-item">
-                            <div className="insight-icon">🏆</div>
-                            <div className="insight-content">
-                                <span className="insight-label">Top Product</span>
-                                <span className="insight-value">{analytics.summary.topProduct || 'N/A'}</span>
+            ) : (
+                <>
+                    {/* Summary Cards */}
+                    <div className="summary-grid">
+                        <div className="summary-card blue">
+                            <div className="summary-card-content">
+                                <div className="summary-left">
+                                    <span className="summary-label">Total Sales</span>
+                                    <span className="summary-value">{analytics.summary.totalSales}</span>
+                                </div>
+                                <div className="summary-icon blue">
+                                    <FaShoppingCart />
+                                </div>
                             </div>
                         </div>
-                        <div className="insight-item">
-                            <div className="insight-icon">📊</div>
-                            <div className="insight-content">
-                                <span className="insight-label">Best Category</span>
-                                <span className="insight-value">{analytics.summary.topCategory || 'N/A'}</span>
+
+                        <div className="summary-card green">
+                            <div className="summary-card-content">
+                                <div className="summary-left">
+                                    <span className="summary-label">Revenue</span>
+                                    <span className="summary-value">{formatCurrency(analytics.summary.totalRevenue)}</span>
+                                </div>
+                                <div className="summary-icon green">
+                                    <FaDollarSign />
+                                </div>
                             </div>
                         </div>
-                        <div className="insight-item">
-                            <div className="insight-icon">📈</div>
-                            <div className="insight-content">
-                                <span className="insight-label">Customer Growth</span>
-                                <span className="insight-value positive">+{Math.floor(Math.random() * 20) + 5}%</span>
+
+                        <div className="summary-card purple">
+                            <div className="summary-card-content">
+                                <div className="summary-left">
+                                    <span className="summary-label">Customers</span>
+                                    <span className="summary-value">{analytics.summary.totalCustomers}</span>
+                                </div>
+                                <div className="summary-icon purple">
+                                    <FaUsers />
+                                </div>
                             </div>
                         </div>
-                        <div className="insight-item">
-                            <div className="insight-icon">🔄</div>
-                            <div className="insight-content">
-                                <span className="insight-label">Conversion Rate</span>
-                                <span className="insight-value">
-                                    {analytics.customers.length > 0 
-                                        ? `${((analytics.summary.totalSales / analytics.customers.length) * 10).toFixed(1)}%`
-                                        : '0%'}
-                                </span>
+
+                        <div className="summary-card yellow">
+                            <div className="summary-card-content">
+                                <div className="summary-left">
+                                    <span className="summary-label">Avg Order Value</span>
+                                    <span className="summary-value">{formatCurrency(analytics.summary.averageOrderValue)}</span>
+                                </div>
+                                <div className="summary-icon yellow">
+                                    <FaBox />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+
+                    {/* Charts Row 1 */}
+                    <div className="charts-row">
+                        <div className="chart-card">
+                            <div className="chart-card-header">
+                                <h3><FaChartLine className="chart-icon blue" /> Sales Trend</h3>
+                                <span className="chart-period">Last {analytics.sales.length} days</span>
+                            </div>
+                            <div className="chart-container">
+                                <Line data={salesChartData} options={chartOptions} />
+                            </div>
+                        </div>
+                        <div className="chart-card">
+                            <div className="chart-card-header">
+                                <h3><FaChartLine className="chart-icon green" /> Revenue Trend</h3>
+                                <span className="chart-period">Last {analytics.revenue.length} days</span>
+                            </div>
+                            <div className="chart-container">
+                                <Line data={revenueChartData} options={chartOptions} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Charts Row 2 */}
+                    <div className="charts-row">
+                        <div className="chart-card">
+                            <div className="chart-card-header">
+                                <h3><FaTrophy className="chart-icon yellow" /> Top Products</h3>
+                                <span className="chart-period">By revenue</span>
+                            </div>
+                            <div className="chart-container">
+                                <Bar data={productChartData} options={{
+                                    ...chartOptions,
+                                    plugins: {
+                                        ...chartOptions.plugins,
+                                        legend: { display: false }
+                                    }
+                                }} />
+                            </div>
+                        </div>
+                        <div className="chart-card">
+                            <div className="chart-card-header">
+                                <h3><FaTag className="chart-icon purple" /> Category Distribution</h3>
+                                <span className="chart-period">By product count</span>
+                            </div>
+                            <div className="chart-container" style={{ maxHeight: '280px' }}>
+                                <Doughnut data={categoryChartData} options={{
+                                    ...chartOptions,
+                                    plugins: {
+                                        ...chartOptions.plugins,
+                                        legend: { position: 'right' }
+                                    }
+                                }} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Charts Row 3 */}
+                    <div className="charts-row">
+                        <div className="chart-card">
+                            <div className="chart-card-header">
+                                <h3><FaUserPlus className="chart-icon purple" /> Top Customers</h3>
+                                <span className="chart-period">By total spent</span>
+                            </div>
+                            <div className="chart-container">
+                                <Bar data={customerChartData} options={{
+                                    ...chartOptions,
+                                    plugins: {
+                                        ...chartOptions.plugins,
+                                        legend: { display: false }
+                                    }
+                                }} />
+                            </div>
+                        </div>
+                        <div className="chart-card insights-card">
+                            <div className="chart-card-header">
+                                <h3><FaClock className="chart-icon blue" /> Key Insights</h3>
+                                <span className="chart-period">Quick overview</span>
+                            </div>
+                            <div className="insights-grid">
+                                <div className="insight-item">
+                                    <div className="insight-icon">🏆</div>
+                                    <div className="insight-content">
+                                        <span className="insight-label">Top Product</span>
+                                        <span className="insight-value">{analytics.summary.topProduct || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <div className="insight-item">
+                                    <div className="insight-icon">📊</div>
+                                    <div className="insight-content">
+                                        <span className="insight-label">Best Category</span>
+                                        <span className="insight-value">{analytics.summary.topCategory || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <div className="insight-item">
+                                    <div className="insight-icon">📈</div>
+                                    <div className="insight-content">
+                                        <span className="insight-label">Total Products</span>
+                                        <span className="insight-value">{analytics.products.length}</span>
+                                    </div>
+                                </div>
+                                <div className="insight-item">
+                                    <div className="insight-icon">🔄</div>
+                                    <div className="insight-content">
+                                        <span className="insight-label">Total Categories</span>
+                                        <span className="insight-value">{analytics.categories.length}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 };

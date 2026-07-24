@@ -1,59 +1,56 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const saleSchema = new mongoose.Schema(
-    {
-        customer: {
+const saleSchema = new mongoose.Schema({
+    receiptNumber: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    items: [{
+        product: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Customer",
-            required: true,
+            ref: 'Product',
+            required: true
         },
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: true,
-        },
-        products: [
-            {
-                product: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: "Product",
-                    required: true,
-                },
-                quantity: {
-                    type: Number,
-                    required: true,
-                    min: 1,
-                },
-                price: {
-                    type: Number,
-                    required: true,
-                    min: 0,
-                },
-            },
-        ],
-        paymentMethod: {
-            type: String,
-            enum: ["cash",
-                "credit",
-                "debit",
-                "transfer",
-                "paypal",
-                "pos"],
-            required: true,
-        },
-        totalAmount: {
+        quantity: {
             type: Number,
             required: true,
-            min: 0,
+            min: 1
         },
-        dateOfSale: {
-            type: Date,
-            default: Date.now,
-        },
+        price: {
+            type: Number,
+            required: true,
+            min: 0
+        }
+    }],
+    customer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customer',
+        default: null
     },
-    {
-        timestamps: true,
+    total: {
+        type: Number,
+        required: true,
+        min: 0
     },
-);
+    paymentMethod: {
+        type: String,
+        enum: ['cash', 'card', 'transfer'],
+        default: 'cash'
+    },
+    status: {
+        type: String,
+        enum: ['completed', 'pending', 'cancelled'],
+        default: 'completed'
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }
+}, {
+    timestamps: true
+});
 
-export default mongoose.model("Sale", saleSchema);
+const Sale = mongoose.model('Sale', saleSchema);
+export default Sale;

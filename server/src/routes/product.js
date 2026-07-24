@@ -17,7 +17,6 @@ router.delete("/:id", deleteProduct);
 // All routes require authentication
 router.use(auth);
 
-// Product routes
 router.get('/', getProducts);
 router.get('/:id', getProductById);
 router.delete('/:id', deleteProduct);

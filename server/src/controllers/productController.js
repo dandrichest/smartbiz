@@ -43,10 +43,10 @@ const editProduct = async(req, res) => {
     }
 }
 
-// Get all products
+// Get all products for the current user
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find({ createdBy: req.userId }).sort({ createdAt: -1 });
         res.json({
             success: true,
             data: products
@@ -64,7 +64,10 @@ export const getProducts = async (req, res) => {
 // Get single product
 export const getProductById = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findOne({ 
+            _id: req.params.id, 
+            createdBy: req.userId 
+        });
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -85,12 +88,33 @@ export const getProductById = async (req, res) => {
     }
 };
 
-
-
-// Delete product
-export const deleteProduct = async (req, res) => {
+// Create product
+export const createProduct = async (req, res) => {
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
+        const product = new Product(req.body);
+        await product.save();
+        res.status(201).json({
+            success: true,
+            data: product
+        });
+    } catch (error) {
+        console.error('Error creating product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create product',
+            error: error.message
+        });
+    }
+};
+
+// Update product
+export const updateProduct = async (req, res) => {
+    try {
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -99,10 +123,42 @@ export const deleteProduct = async (req, res) => {
         }
         res.json({
             success: true,
+            data: product
+        });
+    } catch (error) {
+        console.error('Error updating product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update product',
+            error: error.message
+        });
+    }
+};
+
+// Delete product
+export const deleteProduct = async (req, res) => {
+    try {
+        console.log('🗑️ Deleting product:', req.params.id);
+
+        const product = await Product.findOneAndDelete({ 
+            _id: req.params.id, 
+            createdBy: req.userId 
+        });
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        console.log('✅ Product deleted successfully');
+
+        res.json({
+            success: true,
             message: 'Product deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting product:', error);
+        console.error('❌ Error deleting product:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to delete product',
