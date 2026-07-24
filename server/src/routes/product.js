@@ -1,22 +1,24 @@
+import { deleteProduct, addProduct, editProduct } from "../controllers/productController.js";
 import express from 'express';
 import { 
     getProducts, 
     getProductById, 
-    createProduct, 
-    updateProduct, 
+    addProduct,
+    editProduct,   
     deleteProduct 
 } from '../controllers/productController.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
+router.post("/", addProduct);
+router.put("/:id", editProduct);
+router.delete("/:id", deleteProduct);
 // All routes require authentication
 router.use(auth);
 
 router.get('/', getProducts);
 router.get('/:id', getProductById);
-router.post('/', createProduct);
-router.put('/:id', updateProduct);
 router.delete('/:id', deleteProduct);
 
 export default router;

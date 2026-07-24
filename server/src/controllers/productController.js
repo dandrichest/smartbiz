@@ -1,4 +1,47 @@
-import Product from '../models/Product.js';
+import Product from "../models/Product.js";
+
+//Add product functionality
+const addProduct = async(req, res) => {
+    const {name, category, price, costPrice, quantity, minStock, image} = req.body;
+    try {
+        if(!name || !price || !costPrice){
+            return res.status(400).json({message: 'Name, price, and costPrice are required'})
+        }
+        const product = new Product ({
+            name,
+            category,
+            price,
+            costPrice,
+            quantity,
+            minStock,
+            image,
+        });
+        const createdProcuct = await product.save();
+        res.status(201).json({message: 'Product created sucessfully', product:createdProcuct});
+    }catch(error) {
+        res.status(500).json({message: error.message});
+    }
+}
+
+//Edit product functionality
+
+const editProduct = async(req, res) => {
+    const { id } = req.params;
+    const { name, category, price, costPrice, quantity, minStock, image } = req.body;
+    try {
+        const product = await Product.findByIdAndUpdate(
+            id,
+            { name, category, price, costPrice, quantity, minStock, image },
+            {new: true, runValidators: true}
+        );
+        if(!product) {
+            return res.status(404).json({message: 'Product not found'});
+        }
+        res.status(200).json({message: 'Product updated successfully', product});
+    }catch(error){
+        res.status(500).json({message: error.message});
+    }
+}
 
 // Get all products for the current user
 export const getProducts = async (req, res) => {
@@ -48,125 +91,18 @@ export const getProductById = async (req, res) => {
 // Create product
 export const createProduct = async (req, res) => {
     try {
-        console.log('📦 Creating product for user:', req.userId);
-        console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
-
-        const { 
-            name, 
-            description, 
-            price, 
-            stockQuantity, 
-            category, 
-            sku, 
-            costPrice, 
-            minStock,
-            image 
-        } = req.body;
-
-        // Log each field
-        console.log('📝 Parsed fields:');
-        console.log('  - name:', name, '| type:', typeof name);
-        console.log('  - price:', price, '| type:', typeof price);
-        console.log('  - stockQuantity:', stockQuantity, '| type:', typeof stockQuantity);
-        console.log('  - costPrice:', costPrice, '| type:', typeof costPrice);
-        console.log('  - minStock:', minStock, '| type:', typeof minStock);
-        console.log('  - category:', category, '| type:', typeof category);
-        console.log('  - sku:', sku, '| type:', typeof sku);
-        console.log('  - description:', description, '| type:', typeof description);
-        console.log('  - image:', image ? 'present' : 'absent');
-
-        // Validate
-        if (!name || name.trim() === '') {
-            console.log('❌ Validation failed: name is required');
-            return res.status(400).json({
-                success: false,
-                message: 'Product name is required'
-            });
-        }
-
-        if (price === undefined || price === null || isNaN(price) || Number(price) < 0) {
-            console.log('❌ Validation failed: invalid price');
-            return res.status(400).json({
-                success: false,
-                message: 'Valid price is required'
-            });
-        }
-
-        if (stockQuantity === undefined || stockQuantity === null || isNaN(stockQuantity) || Number(stockQuantity) < 0) {
-            console.log('❌ Validation failed: invalid stock quantity');
-            return res.status(400).json({
-                success: false,
-                message: 'Valid stock quantity is required'
-            });
-        }
-
-        // Ensure user ID exists
-        if (!req.userId) {
-            console.log('❌ No user ID found!');
-            return res.status(401).json({
-                success: false,
-                message: 'User not authenticated'
-            });
-        }
-
-        // Prepare product data
-        const productData = {
-            name: name.trim(),
-            description: description ? description.trim() : '',
-            price: Number(price),
-            costPrice: Number(costPrice || price * 0.7),
-            stockQuantity: Number(stockQuantity),
-            minStock: Number(minStock || 10),
-            category: category ? category.trim() : 'Uncategorized',
-            sku: sku ? sku.trim() : '',
-            image: image || '',
-            createdBy: req.userId
-        };
-
-        console.log('📦 Final product data:', JSON.stringify(productData, null, 2));
-
-        // Create and save
-        const product = new Product(productData);
-        console.log('📦 Product instance created, attempting to save...');
-        
+        const product = new Product(req.body);
         await product.save();
-        
-        console.log('✅ Product created successfully! ID:', product._id);
-
         res.status(201).json({
             success: true,
-            message: 'Product created successfully',
             data: product
         });
     } catch (error) {
-        console.error('❌ Error creating product:', error);
-        console.error('❌ Error name:', error.name);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
-        
-        // Handle specific error types
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map(err => err.message);
-            console.log('❌ Validation errors:', messages);
-            return res.status(400).json({
-                success: false,
-                message: messages.join(', ')
-            });
-        }
-
-        if (error.code === 11000) {
-            console.log('❌ Duplicate key error');
-            return res.status(400).json({
-                success: false,
-                message: 'Product with this SKU already exists'
-            });
-        }
-
+        console.error('Error creating product:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to create product',
-            error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            error: error.message
         });
     }
 };
@@ -174,61 +110,23 @@ export const createProduct = async (req, res) => {
 // Update product
 export const updateProduct = async (req, res) => {
     try {
-        console.log('📝 Updating product:', req.params.id);
-
-        const product = await Product.findOne({ 
-            _id: req.params.id, 
-            createdBy: req.userId 
-        });
+        const product = await Product.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
         if (!product) {
             return res.status(404).json({
                 success: false,
                 message: 'Product not found'
             });
         }
-
-        const { 
-            name, 
-            description, 
-            price, 
-            stockQuantity, 
-            category, 
-            sku, 
-            costPrice, 
-            minStock,
-            image 
-        } = req.body;
-
-        if (name !== undefined) product.name = name.trim() || product.name;
-        if (description !== undefined) product.description = description.trim() || '';
-        if (price !== undefined && !isNaN(price) && price >= 0) product.price = Number(price);
-        if (stockQuantity !== undefined && !isNaN(stockQuantity) && stockQuantity >= 0) {
-            product.stockQuantity = Number(stockQuantity);
-        }
-        if (costPrice !== undefined && !isNaN(costPrice) && costPrice >= 0) {
-            product.costPrice = Number(costPrice);
-        }
-        if (minStock !== undefined && !isNaN(minStock) && minStock >= 0) {
-            product.minStock = Number(minStock);
-        }
-        if (category !== undefined) product.category = category.trim() || 'Uncategorized';
-        if (sku !== undefined) product.sku = sku.trim() || '';
-        if (image !== undefined) product.image = image || '';
-
-        // Update low stock alert flag
-        product.handleLowStockAlert();
-
-        await product.save();
-
-        console.log('✅ Product updated successfully');
-
         res.json({
             success: true,
-            message: 'Product updated successfully',
             data: product
         });
     } catch (error) {
-        console.error('❌ Error updating product:', error);
+        console.error('Error updating product:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to update product',
@@ -268,3 +166,5 @@ export const deleteProduct = async (req, res) => {
         });
     }
 };
+
+export { deleteProduct, addProduct, editProduct};
