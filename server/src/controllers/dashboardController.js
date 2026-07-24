@@ -1,11 +1,14 @@
-import Product from "../models/Product.js";
-import Sale from "../models/Sale.js";
-import Customer from "../models/Customer.js";
+import Product from '../models/Product.js';
+import Sale from '../models/Sale.js';
+import Customer from '../models/Customer.js';
 
+// Get dashboard stats for the current user
 export const getStats = async (req, res) => {
     try {
-        const totalProducts = await Product.countDocuments();
-        const totalCustomers = await Customer.countDocuments();
+        console.log('📊 Fetching dashboard stats for user:', req.userId);
+
+        const totalProducts = await Product.countDocuments({ createdBy: req.userId });
+        const totalCustomers = await Customer.countDocuments({ createdBy: req.userId });
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -13,22 +16,26 @@ export const getStats = async (req, res) => {
         tomorrow.setDate(tomorrow.getDate() + 1);
         
         const todaySales = await Sale.countDocuments({
+            createdBy: req.userId,
             createdAt: { $gte: today, $lt: tomorrow }
         });
         
-        const sales = await Sale.find({});
+        const sales = await Sale.find({ createdBy: req.userId });
         const totalRevenue = sales.reduce((sum, sale) => sum + (sale.total || 0), 0);
-        
-        res.json({
-            totalProducts,
-            totalSales: todaySales,
-            totalCustomers,
-            totalRevenue,
-            revenueGrowth: 12.5,
-            salesGrowth: 8.3,
-            customersGrowth: 5.7,
-            productsGrowth: 3.2
-        });
+
+        const response = {
+            totalProducts: totalProducts || 0,
+            totalSales: todaySales || 0,
+            totalCustomers: totalCustomers || 0,
+            totalRevenue: totalRevenue || 0,
+            revenueGrowth: 0,
+            salesGrowth: 0,
+            customersGrowth: 0,
+            productsGrowth: 0
+        };
+
+        console.log('📊 Stats response:', response);
+        res.json(response);
     } catch (error) {
         console.error("Error getting stats:", error);
         res.status(500).json({
@@ -39,14 +46,17 @@ export const getStats = async (req, res) => {
     }
 };
 
+// Get recent activity for the current user
 export const getRecentActivity = async (req, res) => {
     try {
-        const recentSales = await Sale.find()
+        console.log('📋 Fetching recent activity for user:', req.userId);
+
+        const recentSales = await Sale.find({ createdBy: req.userId })
             .populate("customer", "name")
             .populate("items.product", "name")
             .sort({ createdAt: -1 })
             .limit(5);
-        
+
         const activities = recentSales.map((sale) => ({
             id: sale._id,
             type: "sale",
@@ -54,17 +64,8 @@ export const getRecentActivity = async (req, res) => {
             time: getTimeAgo(sale.createdAt),
             icon: "🛒"
         }));
-        
-        if (activities.length === 0) {
-            activities.push({
-                id: 1,
-                type: "info",
-                message: "No recent sales. Start making sales!",
-                time: "Just now",
-                icon: "📢"
-            });
-        }
-        
+
+        console.log('📋 Activities found:', activities.length);
         res.json(activities);
     } catch (error) {
         console.error("Error getting recent activity:", error);
@@ -76,9 +77,12 @@ export const getRecentActivity = async (req, res) => {
     }
 };
 
+// Get top products for the current user
 export const getTopProducts = async (req, res) => {
     try {
-        const sales = await Sale.find().populate("items.product");
+        console.log('🏆 Fetching top products for user:', req.userId);
+
+        const sales = await Sale.find({ createdBy: req.userId }).populate("items.product");
         
         const productSales = {};
         sales.forEach((sale) => {
@@ -101,16 +105,9 @@ export const getTopProducts = async (req, res) => {
         const topProducts = Object.values(productSales)
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 5);
-        
-        if (topProducts.length === 0) {
-            res.json([
-                { name: "Sample Product 1", sales: 10, revenue: 100 },
-                { name: "Sample Product 2", sales: 8, revenue: 80 },
-                { name: "Sample Product 3", sales: 5, revenue: 50 }
-            ]);
-        } else {
-            res.json(topProducts);
-        }
+
+        console.log('🏆 Top products found:', topProducts.length);
+        res.json(topProducts);
     } catch (error) {
         console.error("Error getting top products:", error);
         res.status(500).json({

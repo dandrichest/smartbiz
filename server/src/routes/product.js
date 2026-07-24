@@ -13,7 +13,6 @@ const router = express.Router();
 // All routes require authentication
 router.use(auth);
 
-// Product routes
 router.get('/', getProducts);
 router.get('/:id', getProductById);
 router.post('/', createProduct);
