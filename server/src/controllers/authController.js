@@ -129,7 +129,7 @@ export const login = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
     try {
-        const user = await User.findById(req.userId).select('-password');
+        const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -170,6 +170,8 @@ export const updateProfile = async (req, res) => {
     try {
         console.log('📝 Updating profile for user:', req.userId);
         console.log('📦 Update data:', req.body);
+        const { name, email, password } = req.body;
+        const user = await User.findById(req.user.id);
 
         const { name, email, phone, address, company, password } = req.body;
         

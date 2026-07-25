@@ -12,6 +12,10 @@ const productSchema = new mongoose.Schema({
         trim: true,
         default: ''
     },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+    },
     price: {
         type: Number,
         required: [true, 'Price is required'],

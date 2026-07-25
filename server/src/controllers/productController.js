@@ -16,6 +16,7 @@ export const addProduct = async (req, res) => {
             minStock,
             image,
             createdBy: req.userId  
+            user: req.user.id,
         });
         const createdProduct = await product.save();
         res.status(201).json({ message: 'Product created successfully', product: createdProduct });
@@ -31,6 +32,7 @@ export const editProduct = async (req, res) => {
     try {
         const product = await Product.findOneAndUpdate(
             { _id: id, createdBy: req.userId },  // ✅ Add this to check user ownership
+            { _id: id, user: req.user.id },
             { name, category, price, costPrice, quantity, minStock, image },
             { new: true, runValidators: true }
         );
@@ -47,6 +49,7 @@ export const editProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
     try {
         const products = await Product.find({ createdBy: req.userId }).sort({ createdAt: -1 });
+        const products = await Product.find({ user: req.user.id });
         res.json({
             success: true,
             data: products
@@ -68,6 +71,7 @@ export const getProductById = async (req, res) => {
             _id: req.params.id,
             createdBy: req.userId
         });
+        const product = await Product.findOne({ _id: req.params.id, user: req.user.id });        
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -256,6 +260,9 @@ export const deleteProduct = async (req, res) => {
         const product = await Product.findOneAndDelete({
             _id: req.params.id,
             createdBy: req.userId
+        const product = await Product.findOneAndDelete({
+            _id: req.params.id,
+            user: req.user.id,
         });
         if (!product) {
             return res.status(404).json({
@@ -280,3 +287,4 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
+export { addProduct, editProduct};

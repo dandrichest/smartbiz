@@ -7,6 +7,11 @@ import {
     deleteProduct,
     addProduct,
     editProduct
+    addProduct,
+    editProduct,
+    getProducts, 
+    getProductById,
+    deleteProduct
 } from '../controllers/productController.js';
 import auth from '../middleware/auth.js';
 
@@ -16,6 +21,11 @@ const router = express.Router();
 router.use(auth);
 
 // ✅ Main CRUD routes
+router.use(auth);
+
+// Product routes
+router.post("/", addProduct);
+router.put("/:id", editProduct);
 router.get('/', getProducts);
 router.get('/:id', getProductById);
 router.post('/', createProduct);  // Use createProduct (full featured)
