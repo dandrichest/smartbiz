@@ -122,7 +122,7 @@ export const login = async (req, res) => {
 
 export const getCurrentUser = async (req, res) => {
     try {
-        const user = await User.findById(req.userId).select('-password');
+        const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -153,7 +153,7 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        const user = await User.findById(req.userId);
+        const user = await User.findById(req.user.id);
 
         if (!user) {
             return res.status(404).json({

@@ -15,6 +15,7 @@ const addProduct = async(req, res) => {
             quantity,
             minStock,
             image,
+            user: req.user.id,
         });
         const createdProcuct = await product.save();
         res.status(201).json({message: 'Product created sucessfully', product:createdProcuct});
@@ -29,8 +30,8 @@ const editProduct = async(req, res) => {
     const { id } = req.params;
     const { name, category, price, costPrice, quantity, minStock, image } = req.body;
     try {
-        const product = await Product.findByIdAndUpdate(
-            id,
+        const product = await Product.findOneAndUpdate(
+            { _id: id, user: req.user.id },
             { name, category, price, costPrice, quantity, minStock, image },
             {new: true, runValidators: true}
         );
@@ -46,7 +47,7 @@ const editProduct = async(req, res) => {
 // Get all products
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find({ user: req.user.id });
         res.json({
             success: true,
             data: products
@@ -64,7 +65,7 @@ export const getProducts = async (req, res) => {
 // Get single product
 export const getProductById = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findOne({ _id: req.params.id, user: req.user.id });        
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -90,7 +91,10 @@ export const getProductById = async (req, res) => {
 // Delete product
 export const deleteProduct = async (req, res) => {
     try {
-        const product = await Product.findByIdAndDelete(req.params.id);
+        const product = await Product.findOneAndDelete({
+            _id: req.params.id,
+            user: req.user.id,
+        });
         if (!product) {
             return res.status(404).json({
                 success: false,
