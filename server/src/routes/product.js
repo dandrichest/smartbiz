@@ -7,11 +7,6 @@ import {
     deleteProduct,
     addProduct,
     editProduct
-    addProduct,
-    editProduct,
-    getProducts, 
-    getProductById,
-    deleteProduct
 } from '../controllers/productController.js';
 import auth from '../middleware/auth.js';
 

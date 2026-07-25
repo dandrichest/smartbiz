@@ -78,118 +78,41 @@ const SalesHistory = () => {
       setLoading(true);
       setGlobalLoading(true);
 
-      try {
-        const response = await api.get("/sales", { params: filter });
-        let salesData = [];
-        if (response.data) {
-          if (Array.isArray(response.data)) {
-            salesData = response.data;
-          } else if (response.data.data && Array.isArray(response.data.data)) {
-            salesData = response.data.data;
-          } else if (
-            response.data.sales &&
-            Array.isArray(response.data.sales)
-          ) {
-            salesData = response.data.sales;
-          } else {
-            salesData = Object.values(response.data).filter(
-              (item) => typeof item === "object"
-            );
-          }
-        }
-        setSales(salesData);
-        errorShownRef.current = false;
-      } catch (apiError) {
-        if (apiError.response?.status === 404) {
-          if (!errorShownRef.current) {
-            errorShownRef.current = true;
-            console.warn("📋 Sales endpoint not found. Using demo data.");
-          }
-          setSales(getDemoSales());
-          return;
-        }
-        console.error("API Error:", apiError);
-        setSales(getDemoSales());
-        if (!errorShownRef.current) {
-          errorShownRef.current = true;
-          toast.error("Failed to fetch sales history. Using demo data.");
+      const response = await api.get("/sales", { params: filter });
+      let salesData = [];
+      
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          salesData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          salesData = response.data.data;
+        } else if (response.data.sales && Array.isArray(response.data.sales)) {
+          salesData = response.data.sales;
         }
       }
+      
+      setSales(salesData);
+      errorShownRef.current = false;
     } catch (error) {
-      console.error("Error:", error);
-      setSales(getDemoSales());
+      console.error("Error fetching sales:", error);
+      
+      if (error.response?.status === 404) {
+        if (!errorShownRef.current) {
+          errorShownRef.current = true;
+          toast.error("Sales endpoint not found. Please check your backend.");
+        }
+      } else if (error.response?.status === 500) {
+        toast.error("Server error. Please try again later.");
+      } else {
+        toast.error("Failed to fetch sales history.");
+      }
+      
+      setSales([]);
     } finally {
       setLoading(false);
       setGlobalLoading(false);
     }
   };
-
-  const getDemoSales = () => [
-    {
-      _id: "1",
-      receiptNumber: "INV-001",
-      createdAt: new Date().toISOString(),
-      customer: { firstName: "John", lastName: "Doe", email: "john@example.com" },
-      items: [
-        { name: "Premium Cotton Fabric", quantity: 2, price: 15.99, total: 31.98 },
-        { name: "Cotton Thread", quantity: 3, price: 4.99, total: 14.97 },
-      ],
-      total: 45.99,
-      subtotal: 42.99,
-      tax: 3.0,
-      paymentMethod: "cash",
-    },
-    {
-      _id: "2",
-      receiptNumber: "INV-002",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      customer: { firstName: "Jane", lastName: "Smith", email: "jane@example.com" },
-      items: [{ name: "Silk Blend Fabric", quantity: 1, price: 29.99, total: 29.99 }],
-      total: 29.99,
-      subtotal: 28.03,
-      tax: 1.96,
-      paymentMethod: "card",
-    },
-    {
-      _id: "3",
-      receiptNumber: "INV-003",
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
-      customer: null,
-      items: [
-        { name: "Leather Wallet", quantity: 1, price: 24.99, total: 24.99 },
-        { name: "Sewing Kit", quantity: 2, price: 12.99, total: 25.98 },
-        { name: "Fabric Scissors", quantity: 2, price: 18.99, total: 37.98 },
-      ],
-      total: 89.97,
-      subtotal: 84.08,
-      tax: 5.89,
-      paymentMethod: "transfer",
-    },
-    {
-      _id: "4",
-      receiptNumber: "INV-004",
-      createdAt: new Date(Date.now() - 259200000).toISOString(),
-      customer: { firstName: "Alice", lastName: "Johnson", email: "alice@example.com" },
-      items: [
-        { name: "Sewing Machine", quantity: 1, price: 199.99, total: 199.99 },
-      ],
-      total: 67.5,
-      subtotal: 63.08,
-      tax: 4.42,
-      paymentMethod: "paypal",
-    },
-    {
-      _id: "5",
-      receiptNumber: "INV-005",
-      createdAt: new Date(Date.now() - 345600000).toISOString(),
-      customer: { firstName: "Bob", lastName: "Williams", email: "bob@example.com" },
-      items: [{ name: "Measuring Tape", quantity: 2, price: 5.99, total: 11.98 }],
-      total: 12.99,
-      subtotal: 12.14,
-      tax: 0.85,
-      paymentMethod: "pos",
-    },
-  ];
 
   // ── Date preset handler ──
   const applyDatePreset = (preset) => {

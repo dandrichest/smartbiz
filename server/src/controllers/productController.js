@@ -15,8 +15,7 @@ export const addProduct = async (req, res) => {
             quantity,
             minStock,
             image,
-            createdBy: req.userId  
-            user: req.user.id,
+            createdBy: req.userId || req.user?.id,
         });
         const createdProduct = await product.save();
         res.status(201).json({ message: 'Product created successfully', product: createdProduct });
@@ -31,8 +30,7 @@ export const editProduct = async (req, res) => {
     const { name, category, price, costPrice, quantity, minStock, image } = req.body;
     try {
         const product = await Product.findOneAndUpdate(
-            { _id: id, createdBy: req.userId },  // ✅ Add this to check user ownership
-            { _id: id, user: req.user.id },
+            { _id: id, createdBy: req.userId || req.user?.id },
             { name, category, price, costPrice, quantity, minStock, image },
             { new: true, runValidators: true }
         );
@@ -48,8 +46,8 @@ export const editProduct = async (req, res) => {
 // Get all products for the current user
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({ createdBy: req.userId }).sort({ createdAt: -1 });
-        const products = await Product.find({ user: req.user.id });
+        const userId = req.userId || req.user?.id;
+        const products = await Product.find({ createdBy: userId }).sort({ createdAt: -1 });
         res.json({
             success: true,
             data: products
@@ -67,11 +65,11 @@ export const getProducts = async (req, res) => {
 // Get single product
 export const getProductById = async (req, res) => {
     try {
+        const userId = req.userId || req.user?.id;
         const product = await Product.findOne({
             _id: req.params.id,
-            createdBy: req.userId
+            createdBy: userId
         });
-        const product = await Product.findOne({ _id: req.params.id, user: req.user.id });        
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -98,7 +96,8 @@ export const createProduct = async (req, res) => {
         console.log('📦 Creating product for user:', req.userId);
         console.log('📦 Received data:', req.body);
 
-        if (!req.userId) {
+        const userId = req.userId || req.user?.id;
+        if (!userId) {
             return res.status(401).json({
                 success: false,
                 message: 'User not authenticated'
@@ -148,7 +147,7 @@ export const createProduct = async (req, res) => {
             sku: sku ? sku.trim() : '',
             image: image || '',
             minStock: minStock ? parseInt(minStock) : 10,
-            createdBy: req.userId
+            createdBy: userId
         };
 
         console.log('📦 Creating product with data:', productData);
@@ -194,9 +193,10 @@ export const updateProduct = async (req, res) => {
     try {
         console.log('📝 Updating product:', req.params.id);
 
+        const userId = req.userId || req.user?.id;
         const product = await Product.findOne({
             _id: req.params.id,
-            createdBy: req.userId
+            createdBy: userId
         });
         if (!product) {
             return res.status(404).json({
@@ -257,12 +257,10 @@ export const deleteProduct = async (req, res) => {
     try {
         console.log('🗑️ Deleting product:', req.params.id);
 
+        const userId = req.userId || req.user?.id;
         const product = await Product.findOneAndDelete({
             _id: req.params.id,
-            createdBy: req.userId
-        const product = await Product.findOneAndDelete({
-            _id: req.params.id,
-            user: req.user.id,
+            createdBy: userId
         });
         if (!product) {
             return res.status(404).json({
@@ -287,4 +285,5 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
-export { addProduct, editProduct};
+// ✅ NO duplicate export statement at the bottom
+// All functions already use 'export const' above

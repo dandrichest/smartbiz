@@ -170,10 +170,10 @@ export const updateProfile = async (req, res) => {
     try {
         console.log('📝 Updating profile for user:', req.userId);
         console.log('📦 Update data:', req.body);
-        const { name, email, password } = req.body;
+        const { name, email, phone, address, company, password } = req.body;
+       
         const user = await User.findById(req.user.id);
 
-        const { name, email, phone, address, company, password } = req.body;
         
         // Build update object
         const updateData = {};
