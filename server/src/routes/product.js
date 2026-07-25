@@ -2,10 +2,7 @@ import { deleteProduct, addProduct, editProduct } from "../controllers/productCo
 import express from 'express';
 import { 
     getProducts, 
-    getProductById, 
-    addProduct,
-    editProduct,   
-    deleteProduct 
+    getProductById,
 } from '../controllers/productController.js';
 import auth from '../middleware/auth.js';
 

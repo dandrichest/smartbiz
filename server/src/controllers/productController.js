@@ -111,4 +111,4 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
-export { deleteProduct, addProduct, editProduct};
+export { addProduct, editProduct};
