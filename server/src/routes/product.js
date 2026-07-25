@@ -1,24 +1,29 @@
-import { deleteProduct, addProduct, editProduct } from "../controllers/productController.js";
 import express from 'express';
 import { 
     getProducts, 
     getProductById, 
+    createProduct, 
+    updateProduct, 
+    deleteProduct,
     addProduct,
-    editProduct,   
-    deleteProduct 
+    editProduct
 } from '../controllers/productController.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post("/", addProduct);
-router.put("/:id", editProduct);
-router.delete("/:id", deleteProduct);
-// All routes require authentication
+// ✅ All routes require authentication - THIS MUST COME FIRST
 router.use(auth);
 
+// ✅ Main CRUD routes
 router.get('/', getProducts);
 router.get('/:id', getProductById);
+router.post('/', createProduct);  // Use createProduct (full featured)
+router.put('/:id', updateProduct); // Use updateProduct (full featured)
 router.delete('/:id', deleteProduct);
+
+// ✅ Compatibility routes (from develop branch)
+router.post('/add', addProduct);
+router.put('/edit/:id', editProduct);
 
 export default router;
