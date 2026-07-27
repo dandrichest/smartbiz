@@ -1,13 +1,13 @@
 import Product from "../models/Product.js";
 
-//Add product functionality
-const addProduct = async(req, res) => {
-    const {name, category, price, costPrice, quantity, minStock, image} = req.body;
+// Add product functionality - EXPORTED
+export const addProduct = async (req, res) => {
+    const { name, category, price, costPrice, quantity, minStock, image } = req.body;
     try {
-        if(!name || !price || !costPrice){
-            return res.status(400).json({message: 'Name, price, and costPrice are required'})
+        if (!name || !price || !costPrice) {
+            return res.status(400).json({ message: 'Name, price, and costPrice are required' });
         }
-        const product = new Product ({
+        const product = new Product({
             name,
             category,
             price,
@@ -15,39 +15,39 @@ const addProduct = async(req, res) => {
             quantity,
             minStock,
             image,
-            user: req.user.id,
+            createdBy: req.userId || req.user?.id,
         });
-        const createdProcuct = await product.save();
-        res.status(201).json({message: 'Product created sucessfully', product:createdProcuct});
-    }catch(error) {
-        res.status(500).json({message: error.message});
+        const createdProduct = await product.save();
+        res.status(201).json({ message: 'Product created successfully', product: createdProduct });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-}
+};
 
-//Edit product functionality
-
-const editProduct = async(req, res) => {
+// Edit product functionality - EXPORTED
+export const editProduct = async (req, res) => {
     const { id } = req.params;
     const { name, category, price, costPrice, quantity, minStock, image } = req.body;
     try {
         const product = await Product.findOneAndUpdate(
-            { _id: id, user: req.user.id },
+            { _id: id, createdBy: req.userId || req.user?.id },
             { name, category, price, costPrice, quantity, minStock, image },
-            {new: true, runValidators: true}
+            { new: true, runValidators: true }
         );
-        if(!product) {
-            return res.status(404).json({message: 'Product not found'});
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
         }
-        res.status(200).json({message: 'Product updated successfully', product});
-    }catch(error){
-        res.status(500).json({message: error.message});
+        res.status(200).json({ message: 'Product updated successfully', product });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-}
+};
 
-// Get all products
+// Get all products for the current user
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({ user: req.user.id });
+        const userId = req.userId || req.user?.id;
+        const products = await Product.find({ createdBy: userId }).sort({ createdAt: -1 });
         res.json({
             success: true,
             data: products
@@ -65,7 +65,11 @@ export const getProducts = async (req, res) => {
 // Get single product
 export const getProductById = async (req, res) => {
     try {
-        const product = await Product.findOne({ _id: req.params.id, user: req.user.id });        
+        const userId = req.userId || req.user?.id;
+        const product = await Product.findOne({
+            _id: req.params.id,
+            createdBy: userId
+        });
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -86,14 +90,113 @@ export const getProductById = async (req, res) => {
     }
 };
 
-
-
-// Delete product
-export const deleteProduct = async (req, res) => {
+// Create product (full featured)
+export const createProduct = async (req, res) => {
     try {
-        const product = await Product.findOneAndDelete({
+        console.log('📦 Creating product for user:', req.userId);
+        console.log('📦 Received data:', req.body);
+
+        const userId = req.userId || req.user?.id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: 'User not authenticated'
+            });
+        }
+
+        const {
+            name,
+            description,
+            price,
+            costPrice,
+            stockQuantity,
+            category,
+            sku,
+            image,
+            minStock
+        } = req.body;
+
+        if (!name || name.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Product name is required'
+            });
+        }
+
+        if (price === undefined || price === null || parseFloat(price) < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid price is required'
+            });
+        }
+
+        if (stockQuantity === undefined || stockQuantity === null || parseInt(stockQuantity) < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid stock quantity is required'
+            });
+        }
+
+        const productData = {
+            name: name.trim(),
+            description: description ? description.trim() : '',
+            price: parseFloat(price),
+            costPrice: costPrice ? parseFloat(costPrice) : parseFloat(price) * 0.7,
+            stockQuantity: parseInt(stockQuantity),
+            category: category ? category.trim() : 'Uncategorized',
+            sku: sku ? sku.trim() : '',
+            image: image || '',
+            minStock: minStock ? parseInt(minStock) : 10,
+            createdBy: userId
+        };
+
+        console.log('📦 Creating product with data:', productData);
+
+        const product = new Product(productData);
+        await product.save();
+
+        console.log('✅ Product created successfully:', product._id);
+
+        res.status(201).json({
+            success: true,
+            message: 'Product created successfully',
+            data: product
+        });
+    } catch (error) {
+        console.error('❌ Error creating product:', error);
+
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Product with this SKU already exists'
+            });
+        }
+
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({
+                success: false,
+                message: messages.join(', ')
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create product',
+            error: error.message
+        });
+    }
+};
+
+// Update product (full featured)
+export const updateProduct = async (req, res) => {
+    try {
+        console.log('📝 Updating product:', req.params.id);
+
+        const userId = req.userId || req.user?.id;
+        const product = await Product.findOne({
             _id: req.params.id,
-            user: req.user.id,
+            createdBy: userId
         });
         if (!product) {
             return res.status(404).json({
@@ -101,12 +204,79 @@ export const deleteProduct = async (req, res) => {
                 message: 'Product not found'
             });
         }
+
+        const {
+            name,
+            description,
+            price,
+            stockQuantity,
+            category,
+            sku,
+            costPrice,
+            minStock,
+            image
+        } = req.body;
+
+        if (name !== undefined) product.name = name.trim() || product.name;
+        if (description !== undefined) product.description = description.trim() || '';
+        if (price !== undefined && !isNaN(price) && price >= 0) product.price = Number(price);
+        if (stockQuantity !== undefined && !isNaN(stockQuantity) && stockQuantity >= 0) {
+            product.stockQuantity = Number(stockQuantity);
+        }
+        if (costPrice !== undefined && !isNaN(costPrice) && costPrice >= 0) {
+            product.costPrice = Number(costPrice);
+        }
+        if (minStock !== undefined && !isNaN(minStock) && minStock >= 0) {
+            product.minStock = Number(minStock);
+        }
+        if (category !== undefined) product.category = category.trim() || 'Uncategorized';
+        if (sku !== undefined) product.sku = sku.trim() || '';
+        if (image !== undefined) product.image = image || '';
+
+        await product.save();
+
+        console.log('✅ Product updated successfully');
+
+        res.json({
+            success: true,
+            message: 'Product updated successfully',
+            data: product
+        });
+    } catch (error) {
+        console.error('❌ Error updating product:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update product',
+            error: error.message
+        });
+    }
+};
+
+// Delete product
+export const deleteProduct = async (req, res) => {
+    try {
+        console.log('🗑️ Deleting product:', req.params.id);
+
+        const userId = req.userId || req.user?.id;
+        const product = await Product.findOneAndDelete({
+            _id: req.params.id,
+            createdBy: userId
+        });
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        console.log('✅ Product deleted successfully');
+
         res.json({
             success: true,
             message: 'Product deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting product:', error);
+        console.error('❌ Error deleting product:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to delete product',
@@ -115,4 +285,5 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
-export { addProduct, editProduct};
+// ✅ NO duplicate export statement at the bottom
+// All functions already use 'export const' above

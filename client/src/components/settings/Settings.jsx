@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react';
 import {
@@ -26,12 +27,13 @@ import {
     FaMobile,
     FaBuilding,
 } from 'react-icons/fa';
-import { useAuth } from '../../context/AuthContext'; // Fixed import - from AuthContext not AppContext
+import { useAuth } from '../../context/AuthContext';
+import api from '../../api';
 import toast from 'react-hot-toast';
 import '../../styles/Settings.css';
 
 const Settings = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(false);
     const [profileData, setProfileData] = useState({
@@ -58,14 +60,48 @@ const Settings = () => {
         sidebarCollapsed: false,
     });
 
-    // Handle profile update
-    const handleProfileUpdate = (e) => {
+    // ✅ Load user data when component mounts
+    useEffect(() => {
+        if (user) {
+            setProfileData({
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                address: user.address || '',
+                company: user.company || '',
+            });
+        }
+    }, [user]);
+
+    // ✅ Handle profile update with API
+    const handleProfileUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
-            toast.success('Profile updated successfully!');
+
+        try {
+            const response = await api.put('/auth/profile', {
+                name: profileData.name,
+                email: profileData.email,
+                phone: profileData.phone,
+                address: profileData.address,
+                company: profileData.company,
+            });
+
+            if (response.data.success) {
+                // ✅ Update user in context
+                if (updateUser) {
+                    updateUser(response.data.user || response.data.data);
+                }
+                toast.success('Profile updated successfully!');
+            } else {
+                toast.error(response.data.message || 'Failed to update profile');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            toast.error(error.response?.data?.message || 'Failed to update profile');
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     };
 
     // Handle notifications update
@@ -77,24 +113,70 @@ const Settings = () => {
         toast.success(`${key.charAt(0).toUpperCase() + key.slice(1)} notifications ${!notifications[key] ? 'enabled' : 'disabled'}`);
     };
 
-    // Handle security update
-    const handleSecurityUpdate = (e) => {
+    // ✅ Handle security update
+    const handleSecurityUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
-            toast.success('Security settings updated!');
+
+        try {
+            // Save security settings to backend
+            const response = await api.put('/auth/security', {
+                twoFactor: security.twoFactor,
+                sessionTimeout: security.sessionTimeout,
+            });
+
+            if (response.data.success) {
+                toast.success('Security settings updated!');
+            } else {
+                toast.error(response.data.message || 'Failed to update security settings');
+            }
+        } catch (error) {
+            console.error('Error updating security:', error);
+            toast.error(error.response?.data?.message || 'Failed to update security settings');
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     };
 
-    // Handle appearance update
-    const handleAppearanceUpdate = (e) => {
+    // ✅ Handle appearance update
+    const handleAppearanceUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
-            toast.success('Appearance settings updated!');
+
+        try {
+            // Save appearance settings to backend
+            const response = await api.put('/auth/appearance', {
+                theme: appearance.theme,
+                fontSize: appearance.fontSize,
+                sidebarCollapsed: appearance.sidebarCollapsed,
+            });
+
+            if (response.data.success) {
+                toast.success('Appearance settings updated!');
+                // Apply theme changes immediately
+                applyTheme(appearance.theme);
+            } else {
+                toast.error(response.data.message || 'Failed to update appearance settings');
+            }
+        } catch (error) {
+            console.error('Error updating appearance:', error);
+            toast.error(error.response?.data?.message || 'Failed to update appearance settings');
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
+    };
+
+    // ✅ Apply theme
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            // System theme
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        }
     };
 
     // Handle data actions
@@ -233,8 +315,20 @@ const Settings = () => {
                                     <button type="submit" className="btn-primary" disabled={loading}>
                                         <FaSave /> {loading ? 'Saving...' : 'Save Changes'}
                                     </button>
-                                    <button type="reset" className="btn-secondary">
-                                        <FaTimes /> Cancel
+                                    <button 
+                                        type="button" 
+                                        className="btn-secondary"
+                                        onClick={() => {
+                                            setProfileData({
+                                                name: user?.name || '',
+                                                email: user?.email || '',
+                                                phone: user?.phone || '',
+                                                address: user?.address || '',
+                                                company: user?.company || '',
+                                            });
+                                        }}
+                                    >
+                                        <FaTimes /> Reset
                                     </button>
                                 </div>
                             </form>
