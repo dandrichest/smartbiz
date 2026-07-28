@@ -1,46 +1,19 @@
 import Product from "../models/Product.js";
+import cloudinary from "../middleware/cloudinary.js";
 
-// Add product functionality - EXPORTED
-export const addProduct = async (req, res) => {
-    const { name, category, price, costPrice, quantity, minStock, image } = req.body;
-    try {
-        if (!name || !price || !costPrice) {
-            return res.status(400).json({ message: 'Name, price, and costPrice are required' });
-        }
-        const product = new Product({
-            name,
-            category,
-            price,
-            costPrice,
-            quantity,
-            minStock,
-            image,
-            createdBy: req.userId || req.user?.id,
+//Helper function for uploading images. Only upload if it's a fresh base64 image from the file picker.
+// If it's already an https:// URL (unchanged on edit, or pasted URL), leave it as-is.
+const uploadImageIfNeeded = async (image) => {
+    if (!image) return '';
+
+    if (image.startsWith('data:image')) {
+        const result = await cloudinary.uploader.upload(image, {
+            folder: 'smartbiz-products',
+            transformation: [{ width: 400, height: 400, crop: 'limit' }],
         });
-        const createdProduct = await product.save();
-        res.status(201).json({ message: 'Product created successfully', product: createdProduct });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        return result.secure_url;
     }
-};
-
-// Edit product functionality - EXPORTED
-export const editProduct = async (req, res) => {
-    const { id } = req.params;
-    const { name, category, price, costPrice, quantity, minStock, image } = req.body;
-    try {
-        const product = await Product.findOneAndUpdate(
-            { _id: id, createdBy: req.userId || req.user?.id },
-            { name, category, price, costPrice, quantity, minStock, image },
-            { new: true, runValidators: true }
-        );
-        if (!product) {
-            return res.status(404).json({ message: 'Product not found' });
-        }
-        res.status(200).json({ message: 'Product updated successfully', product });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    return image;
 };
 
 // Get all products for the current user
@@ -93,9 +66,6 @@ export const getProductById = async (req, res) => {
 // Create product (full featured)
 export const createProduct = async (req, res) => {
     try {
-        console.log('📦 Creating product for user:', req.userId);
-        console.log('📦 Received data:', req.body);
-
         const userId = req.userId || req.user?.id;
         if (!userId) {
             return res.status(401).json({
@@ -136,7 +106,8 @@ export const createProduct = async (req, res) => {
                 message: 'Valid stock quantity is required'
             });
         }
-
+        
+        const imageUrl = await uploadImageIfNeeded(image);
         const productData = {
             name: name.trim(),
             description: description ? description.trim() : '',
@@ -145,17 +116,14 @@ export const createProduct = async (req, res) => {
             stockQuantity: parseInt(stockQuantity),
             category: category ? category.trim() : 'Uncategorized',
             sku: sku ? sku.trim() : '',
-            image: image || '',
+            image: imageUrl,
             minStock: minStock ? parseInt(minStock) : 10,
             createdBy: userId
         };
-
-        console.log('📦 Creating product with data:', productData);
+       
 
         const product = new Product(productData);
-        await product.save();
-
-        console.log('✅ Product created successfully:', product._id);
+        await product.save();        
 
         res.status(201).json({
             success: true,
@@ -163,7 +131,7 @@ export const createProduct = async (req, res) => {
             data: product
         });
     } catch (error) {
-        console.error('❌ Error creating product:', error);
+        console.error('Error creating product:', error);
 
         if (error.code === 11000) {
             return res.status(400).json({
@@ -191,8 +159,6 @@ export const createProduct = async (req, res) => {
 // Update product (full featured)
 export const updateProduct = async (req, res) => {
     try {
-        console.log('📝 Updating product:', req.params.id);
-
         const userId = req.userId || req.user?.id;
         const product = await Product.findOne({
             _id: req.params.id,
@@ -231,11 +197,13 @@ export const updateProduct = async (req, res) => {
         }
         if (category !== undefined) product.category = category.trim() || 'Uncategorized';
         if (sku !== undefined) product.sku = sku.trim() || '';
-        if (image !== undefined) product.image = image || '';
+        if (image !== undefined) {
+            product.image = await uploadImageIfNeeded(image);
+        }
 
         await product.save();
 
-        console.log('✅ Product updated successfully');
+        console.log('Product updated successfully');
 
         res.json({
             success: true,
@@ -243,7 +211,7 @@ export const updateProduct = async (req, res) => {
             data: product
         });
     } catch (error) {
-        console.error('❌ Error updating product:', error);
+        console.error('Error updating product:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to update product',
@@ -255,7 +223,7 @@ export const updateProduct = async (req, res) => {
 // Delete product
 export const deleteProduct = async (req, res) => {
     try {
-        console.log('🗑️ Deleting product:', req.params.id);
+        console.log('Deleting product:', req.params.id);
 
         const userId = req.userId || req.user?.id;
         const product = await Product.findOneAndDelete({
@@ -269,14 +237,14 @@ export const deleteProduct = async (req, res) => {
             });
         }
 
-        console.log('✅ Product deleted successfully');
+        console.log('Product deleted successfully');
 
         res.json({
             success: true,
             message: 'Product deleted successfully'
         });
     } catch (error) {
-        console.error('❌ Error deleting product:', error);
+        console.error('Error deleting product:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to delete product',
@@ -284,6 +252,3 @@ export const deleteProduct = async (req, res) => {
         });
     }
 };
-
-// ✅ NO duplicate export statement at the bottom
-// All functions already use 'export const' above
