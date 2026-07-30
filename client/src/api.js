@@ -1,10 +1,10 @@
 import axios from 'axios';
 const api = axios.create({
-baseURL: '/api'
-headers: {
-'Content-Type': 'application/json',
-},
-timeout: 60000,
+  baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 60000,
 });
 
 // Add a request interceptor to include the token
