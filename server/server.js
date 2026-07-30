@@ -48,6 +48,13 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
 });
 
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,   
+        message: "SmartBiz API is running"  
+    });
+});
+
 // 404 handler for undefined routes
 app.use((req, res) => {
     console.log(`Route not found: ${req.method} ${req.url}`);
