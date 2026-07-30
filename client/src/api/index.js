@@ -1,7 +1,7 @@
-﻿
-import axios from 'axios';
+﻿import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// ✅ FORCE the backend URL
+const API_URL = 'http://localhost:5000/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -10,9 +10,13 @@ const api = axios.create({
     },
 });
 
-// Request interceptor - add token
 api.interceptors.request.use(
     (config) => {
+        // ✅ Ensure URL uses the backend
+        if (!config.url.startsWith('http')) {
+            config.url = API_URL + config.url;
+        }
+        
         const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -22,11 +26,9 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle errors
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Only redirect to login on 401 if not already on login page
         if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
             localStorage.removeItem('token');
             window.location.href = '/login';

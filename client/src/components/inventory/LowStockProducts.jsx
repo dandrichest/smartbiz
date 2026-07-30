@@ -1,7 +1,10 @@
 import { FaExclamationTriangle, FaBox, FaArrowRight } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/LowStockProducts.css';
 
-const LowStockProducts = ({ products = [] }) => {
+const LowStockProducts = ({ products = [], loading = false }) => {
+    const navigate = useNavigate();
+
     // Get products with stock <= 10
     const lowStockProducts = products
         .filter(product => (product.stockQuantity || 0) <= 10)
@@ -19,6 +22,28 @@ const LowStockProducts = ({ products = [] }) => {
         if (stock <= 5) return 'critical';
         return 'warning';
     };
+
+    const handleViewAll = () => {
+        navigate('/inventory');
+    };
+
+    if (loading) {
+        return (
+            <div className="low-stock-card">
+                <div className="low-stock-header">
+                    <h2>
+                        <FaExclamationTriangle className="header-icon" />
+                        Low Stock Alert
+                    </h2>
+                    <span className="low-stock-badge all-good">Loading...</span>
+                </div>
+                <div className="low-stock-loading">
+                    <div className="low-stock-spinner"></div>
+                    <p>Checking stock levels...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="low-stock-card">
@@ -71,7 +96,7 @@ const LowStockProducts = ({ products = [] }) => {
 
             {lowStockProducts.length > 0 && (
                 <div className="low-stock-footer">
-                    <button className="low-stock-view-all">
+                    <button className="low-stock-view-all" onClick={handleViewAll}>
                         View All Low Stock Items <FaArrowRight />
                     </button>
                 </div>

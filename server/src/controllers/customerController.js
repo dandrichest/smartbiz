@@ -1,12 +1,13 @@
 import Customer from '../models/Customer.js';
 
-// Get all customers
+// Get all customers for the current user
 export const getCustomers = async (req, res) => {
     try {
-        const customers = await Customer.find().sort({ createdAt: -1 });
+        console.log('📋 Fetching customers for user:', req.userId);
+        const customers = await Customer.find({ createdBy: req.userId }).sort({ createdAt: -1 });
+        console.log(`✅ Found ${customers.length} customers`);
         res.json({
             success: true,
-            count: customers.length,
             data: customers
         });
     } catch (error) {
@@ -19,10 +20,13 @@ export const getCustomers = async (req, res) => {
     }
 };
 
-// Get single customer by ID
+// Get single customer
 export const getCustomerById = async (req, res) => {
     try {
-        const customer = await Customer.findById(req.params.id);
+        const customer = await Customer.findOne({ 
+            _id: req.params.id, 
+            createdBy: req.userId 
+        });
         if (!customer) {
             return res.status(404).json({
                 success: false,
@@ -43,37 +47,56 @@ export const getCustomerById = async (req, res) => {
     }
 };
 
-// Create new customer
+// Create customer
 export const createCustomer = async (req, res) => {
     try {
+        console.log('📝 Creating customer for user:', req.userId);
+        console.log('📝 Customer data:', req.body);
+
         const { name, email, phone, address } = req.body;
-        
-        // Check if customer already exists
-        const existingCustomer = await Customer.findOne({ email });
-        if (existingCustomer) {
+
+        // Validate
+        if (!name || name.trim() === '') {
             return res.status(400).json({
                 success: false,
-                message: 'Customer with this email already exists'
+                message: 'Customer name is required'
             });
         }
 
+        // Check for duplicate email
+        if (email) {
+            const existing = await Customer.findOne({ 
+                email: email.toLowerCase(), 
+                createdBy: req.userId 
+            });
+            if (existing) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Customer with this email already exists'
+                });
+            }
+        }
+
         const customer = new Customer({
-            name,
-            email,
-            phone,
-            address,
+            name: name.trim(),
+            email: email ? email.toLowerCase() : '',
+            phone: phone || '',
+            address: address || '',
             purchaseCount: 0,
-            totalSpent: 0
+            totalSpent: 0,
+            createdBy: req.userId
         });
 
         await customer.save();
+        console.log('✅ Customer created successfully:', customer._id);
+
         res.status(201).json({
             success: true,
             message: 'Customer created successfully',
             data: customer
         });
     } catch (error) {
-        console.error('Error creating customer:', error);
+        console.error('❌ Error creating customer:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to create customer',
@@ -85,26 +108,36 @@ export const createCustomer = async (req, res) => {
 // Update customer
 export const updateCustomer = async (req, res) => {
     try {
-        const { name, email, phone, address } = req.body;
-        const customer = await Customer.findByIdAndUpdate(
-            req.params.id,
-            { name, email, phone, address, updatedAt: Date.now() },
-            { new: true, runValidators: true }
-        );
-        
+        console.log('📝 Updating customer:', req.params.id);
+
+        const customer = await Customer.findOne({ 
+            _id: req.params.id, 
+            createdBy: req.userId 
+        });
         if (!customer) {
             return res.status(404).json({
                 success: false,
                 message: 'Customer not found'
             });
         }
+
+        const { name, email, phone, address } = req.body;
+
+        if (name !== undefined) customer.name = name.trim();
+        if (email !== undefined) customer.email = email.toLowerCase();
+        if (phone !== undefined) customer.phone = phone;
+        if (address !== undefined) customer.address = address;
+
+        await customer.save();
+        console.log('✅ Customer updated successfully');
+
         res.json({
             success: true,
             message: 'Customer updated successfully',
             data: customer
         });
     } catch (error) {
-        console.error('Error updating customer:', error);
+        console.error('❌ Error updating customer:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to update customer',
@@ -116,55 +149,29 @@ export const updateCustomer = async (req, res) => {
 // Delete customer
 export const deleteCustomer = async (req, res) => {
     try {
-        const customer = await Customer.findByIdAndDelete(req.params.id);
+        console.log('🗑️ Deleting customer:', req.params.id);
+
+        const customer = await Customer.findOneAndDelete({ 
+            _id: req.params.id, 
+            createdBy: req.userId 
+        });
         if (!customer) {
             return res.status(404).json({
                 success: false,
                 message: 'Customer not found'
             });
         }
+
+        console.log('✅ Customer deleted successfully');
         res.json({
             success: true,
             message: 'Customer deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting customer:', error);
+        console.error('❌ Error deleting customer:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to delete customer',
-            error: error.message
-        });
-    }
-};
-
-// Get customer purchase history
-export const getCustomerPurchaseHistory = async (req, res) => {
-    try {
-        const customer = await Customer.findById(req.params.id)
-            .populate('purchases');
-        
-        if (!customer) {
-            return res.status(404).json({
-                success: false,
-                message: 'Customer not found'
-            });
-        }
-        res.json({
-            success: true,
-            data: {
-                customer: customer.name,
-                email: customer.email,
-                phone: customer.phone,
-                purchaseCount: customer.purchaseCount,
-                totalSpent: customer.totalSpent,
-                purchases: customer.purchases || []
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching customer history:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch customer history',
             error: error.message
         });
     }
