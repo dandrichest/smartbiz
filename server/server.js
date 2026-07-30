@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -15,6 +17,8 @@ import alertRoutes from './src/routes/alerts.js';
 import reviewRoutes from './src/routes/reviews.js';
 import testimonialRoutes from './src/routes/testimonials.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -42,10 +46,19 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/alerts', alertRoutes); 
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/testimonials', testimonialRoutes);
+app.use(
+express.static(path.join(__dirname, '../client/dist'))
+);
 
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
+});
+
+app.get('*', (req, res) => {
+res.sendFile(
+path.join(__dirname, '../client/dist/index.html')
+);
 });
 
 app.get("/", (req, res) => {
@@ -55,14 +68,6 @@ app.get("/", (req, res) => {
     });
 });
 
-// 404 handler for undefined routes
-app.use((req, res) => {
-    console.log(`Route not found: ${req.method} ${req.url}`);
-    res.status(404).json({
-        success: false,
-        message: `Route ${req.url} not found`
-    });
-});
 
 // Global error handler
 app.use((err, req, res, next) => {
