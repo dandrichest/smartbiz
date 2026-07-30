@@ -1,12 +1,10 @@
 import axios from 'axios';
-
-// Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 60000,
+baseURL: '/api'
+headers: {
+'Content-Type': 'application/json',
+},
+timeout: 60000,
 });
 
 // Add a request interceptor to include the token
