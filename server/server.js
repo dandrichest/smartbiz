@@ -21,6 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
+const clientDistPath = path.join(__dirname, '../client/dist');
 
 // Middleware
 app.use(helmet());
@@ -43,12 +44,11 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api/alerts', alertRoutes); 
+app.use('/api/alerts', alertRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/testimonials', testimonialRoutes);
-app.use(
-express.static(path.join(__dirname, '../client/dist'))
-);
+
+app.use(express.static(clientDistPath));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -56,15 +56,13 @@ app.get('/api/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-res.sendFile(
-path.join(__dirname, '../client/dist/index.html')
-);
+    res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
-app.get("/", (req, res) => {
+app.get('/health', (req, res) => {
     res.status(200).json({
-        success: true,   
-        message: "SmartBiz API is running"  
+        success: true,
+        message: 'SmartBiz API is running'
     });
 });
 
