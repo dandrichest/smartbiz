@@ -8,13 +8,15 @@ import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/product.js';
 import salesRoutes from './src/routes/sales.js';
 import customerRoutes from './src/routes/customer.js';
-import dashboardRoutes from './src/routes/dashboard.js';  
+import dashboardRoutes from './src/routes/dashboard.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// middleware
-app.use(helmet());
+// ✅ Quick fix - Disable CSP only
+app.use(helmet({
+    contentSecurityPolicy: false,
+}));
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -24,7 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/customers', customerRoutes);
-app.use('/api/dashboard', dashboardRoutes);  // ← ADD THIS
+app.use('/api/dashboard', dashboardRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -41,7 +43,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Connect to DB and then start the server
 connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`🚀 Server running on port ${PORT}`);
