@@ -8,7 +8,7 @@ import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/product.js';
 import salesRoutes from './src/routes/sales.js';
 import customerRoutes from './src/routes/customer.js';
-import dashboardRoutes from './src/routes/dashboard.js';  // ← ADD THIS
+import dashboardRoutes from './src/routes/dashboard.js';  
 
 const app = express();
 const PORT = process.env.PORT || 5000;
