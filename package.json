@@ -1,0 +1,12 @@
+{
+  "name": "smartbiz",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix client run build",
+    "start": "node server/server.js",
+    "render:install": "npm install --prefix server"
+  },
+  "dependencies": {
+    "cloudinary": "^2.10.0"
+  }
+}

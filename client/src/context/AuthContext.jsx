@@ -61,7 +61,10 @@ export const AuthProvider = ({ children }) => {
                         const demoUser = { 
                             name: 'Demo User', 
                             email: 'demo@smartbiz.com',
-                            _id: 'demo123'
+                            _id: 'demo123',
+                            phone: '',
+                            address: '',
+                            company: ''
                         };
                         setUser(demoUser);
                         localStorage.setItem('user', JSON.stringify(demoUser));
@@ -110,7 +113,10 @@ export const AuthProvider = ({ children }) => {
                 const demoUser = { 
                     name: email.split('@')[0] || 'Demo User', 
                     email: email,
-                    _id: 'demo123'
+                    _id: 'demo123',
+                    phone: '',
+                    address: '',
+                    company: ''
                 };
                 setUser(demoUser);
                 localStorage.setItem('user', JSON.stringify(demoUser));
@@ -146,12 +152,31 @@ export const AuthProvider = ({ children }) => {
         window.location.href = '/login';
     };
 
+    // ✅ ADD THIS: Update user function
+    const updateUser = (userData) => {
+        console.log('🔄 Updating user in context:', userData);
+        
+        const updatedUser = { 
+            ...user, 
+            ...userData,
+            // Ensure we keep the id
+            id: user?.id || userData?.id || userData?._id || 'demo123'
+        };
+        
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        console.log('✅ User updated in context:', updatedUser);
+        return updatedUser;
+    };
+
     const value = {
         user,
         loading,
         login,
         register,
         logout,
+        updateUser, 
         isAuthenticated: !!user,
     };
 

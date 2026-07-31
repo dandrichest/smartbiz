@@ -4,7 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    
+    <!-- ✅ Content Security Policy - Allow external images -->
+    <meta http-equiv="Content-Security-Policy" 
+          content="img-src 'self' data: https://i.pravatar.cc https://images.unsplash.com https://res.cloudinary.com https://*.cloudinary.com https://lh3.googleusercontent.com https://*.gravatar.com https://*;">
+    
+    <title>SmartBiz - Business Management</title>
   </head>
   <body>
     <div id="root"></div>
