@@ -3,8 +3,8 @@ services:
     name: smartbiz
     env: node
     plan: free
-    buildCommand: npm install --prefix client && npm run build && npm run render:install
-    startCommand: npm start
+    buildCommand: npm install --prefix client && npm run build && npm --prefix server run render:install
+    startCommand: node server/server.js
     envVars:
       - key: NODE_ENV
         value: production
