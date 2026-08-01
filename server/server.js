@@ -3,6 +3,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './DB/connection.js';
 import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/product.js';
@@ -10,8 +12,11 @@ import salesRoutes from './src/routes/sales.js';
 import customerRoutes from './src/routes/customer.js';
 import dashboardRoutes from './src/routes/dashboard.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
+const clientDistPath = path.join(__dirname, '../client/dist');
 
 // ✅ Quick fix - Disable CSP only
 app.use(helmet({
@@ -28,9 +33,22 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
+app.use(express.static(clientDistPath));
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+});
+
+app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 // Error handling middleware
