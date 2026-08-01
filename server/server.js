@@ -44,7 +44,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
-app.get('*', (req, res, next) => {
+app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
         return next();
     }
