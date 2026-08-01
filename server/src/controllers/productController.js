@@ -1,20 +1,5 @@
 import Product from "../models/Product.js";
-import cloudinary from "../middleware/cloudinary.js";
-
-//Helper function for uploading images. Only upload if it's a fresh base64 image from the file picker.
-// If it's already an https:// URL (unchanged on edit, or pasted URL), leave it as-is.
-const uploadImageIfNeeded = async (image) => {
-    if (!image) return '';
-
-    if (image.startsWith('data:image')) {
-        const result = await cloudinary.uploader.upload(image, {
-            folder: 'smartbiz-products',
-            transformation: [{ width: 400, height: 400, crop: 'limit' }],
-        });
-        return result.secure_url;
-    }
-    return image;
-};
+import { uploadImageIfNeeded } from '../utils/imageUpload.js';
 
 // Get all products for the current user
 export const getProducts = async (req, res) => {
