@@ -133,7 +133,9 @@ const AnalyticsDashboard = () => {
         } catch (error) {
             console.error('Error fetching analytics:', error);
             
-            if (error.response?.status === 404) {
+            if (error.response?.status === 401) {
+                toast.error('Please sign in again to view analytics.');
+            } else if (error.response?.status === 404) {
                 toast.error('Analytics endpoint not found. Please check your backend.');
             } else if (error.code === 'ERR_NETWORK') {
                 toast.error('Network error. Please check your connection.');

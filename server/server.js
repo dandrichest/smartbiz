@@ -11,6 +11,7 @@ import productRoutes from './src/routes/product.js';
 import salesRoutes from './src/routes/sales.js';
 import customerRoutes from './src/routes/customer.js';
 import dashboardRoutes from './src/routes/dashboard.js';
+import analyticsRoutes from './src/routes/analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +35,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.use(express.static(clientDistPath));
 
