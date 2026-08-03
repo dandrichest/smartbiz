@@ -1,10 +1,10 @@
-import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import connectDB from './DB/connection.js';
 import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/product.js';
@@ -14,6 +14,8 @@ import dashboardRoutes from './src/routes/dashboard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const clientDistPath = path.join(__dirname, '../client/dist');

@@ -1,10 +1,14 @@
 ﻿// server/src/controllers/authController.js
+import path from 'path';
+import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const register = async (req, res) => {
     try {
@@ -21,15 +25,11 @@ export const register = async (req, res) => {
             });
         }
 
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Create user
+        // Create user; the user model will hash the password before saving
         const user = new User({
             name,
             email,
-            password: hashedPassword,
+            password,
             role: role || 'staff'
         });
 

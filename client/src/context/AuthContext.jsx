@@ -108,23 +108,13 @@ export const AuthProvider = ({ children }) => {
             toast.success('Welcome back!');
             return { success: true };
         } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Login failed';
             if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
-                toast.warning('Backend not available. Using demo mode.');
-                const demoUser = { 
-                    name: email.split('@')[0] || 'Demo User', 
-                    email: email,
-                    _id: 'demo123',
-                    phone: '',
-                    address: '',
-                    company: ''
-                };
-                setUser(demoUser);
-                localStorage.setItem('user', JSON.stringify(demoUser));
-                localStorage.setItem('token', 'demo-token-123');
-                return { success: true };
+                toast.error(`Backend unavailable: ${message}`);
+                return { success: false, error: message };
             }
-            toast.error(error.response?.data?.message || 'Login failed');
-            return { success: false, error: error.response?.data?.message };
+            toast.error(message);
+            return { success: false, error: message };
         }
     };
 
@@ -134,12 +124,13 @@ export const AuthProvider = ({ children }) => {
             toast.success(response.data.message || 'Registration successful! Please login.');
             return { success: true };
         } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Registration failed';
             if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
-                toast.warning('Backend not available. Using demo mode.');
-                return { success: true };
+                toast.error(`Backend unavailable: ${message}`);
+                return { success: false, error: message };
             }
-            toast.error(error.response?.data?.message || 'Registration failed');
-            return { success: false, error: error.response?.data?.message };
+            toast.error(message);
+            return { success: false, error: message };
         }
     };
 

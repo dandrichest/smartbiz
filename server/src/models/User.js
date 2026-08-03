@@ -76,19 +76,17 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// ✅ FIXED: Pre-save middleware with proper async/await
-userSchema.pre('save', async function(next) {
-    // Only hash the password if it's modified and exists
-    if (!this.isModified('password') || !this.password) {
-        return next();
-    }
-    
+// Hash the password before saving when it is new or changed
+userSchema.pre('save', async function() {
     try {
+        if (!this.isModified('password') || !this.password) {
+            return;
+        }
+
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
-        next();
     } catch (error) {
-        next(error);
+        throw error;
     }
 });
 
