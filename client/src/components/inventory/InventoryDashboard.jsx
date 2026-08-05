@@ -765,7 +765,7 @@ const InventoryDashboard = () => {
                         )}
                       </button>
                     </div>
-                    <p className="inv-hint">Max 5MB · JPG, PNG, WebP</p>
+                    <p className="inv-hint">Max 400 × 400 · JPG, PNG, WebP</p>
                   </div>
                 </div>
               </div>
